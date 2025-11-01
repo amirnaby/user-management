@@ -24,7 +24,6 @@ import java.util.function.Function;
 public class JwtServiceImpl implements JwtService {
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
-
     @Value("${application.security.jwt.expiration}")
     private long jwtExpiration;
     @Value("${application.security.jwt.refresh-token.expiration}")
