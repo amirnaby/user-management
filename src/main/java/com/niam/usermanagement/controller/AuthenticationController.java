@@ -50,7 +50,7 @@ public class AuthenticationController {
                 .body(authenticationResponse);
     }
 
-    @PostMapping("/authenticate")
+    @PostMapping("/login")
     @Operation(
             responses = {
                     @ApiResponse(
