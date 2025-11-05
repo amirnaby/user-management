@@ -27,8 +27,9 @@ public class User implements UserDetails { // make our app User a spring securit
     private Long id;
     private String firstname;
     private String lastname;
-    private String email;
+    private String code;
     private String password;
+    private boolean isActive;
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -46,7 +47,7 @@ public class User implements UserDetails { // make our app User a spring securit
 
     @Override
     public String getUsername() {
-        return email;
+        return code;
     }
 
     @Override

@@ -2,7 +2,6 @@ package com.niam.usermanagement.payload.request;
 
 import com.niam.usermanagement.enums.Role;
 import com.niam.usermanagement.validation.StrongPassword;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -19,9 +18,8 @@ public class RegisterRequest {
     private String firstname;
     @NotBlank(message = "lastname is required")
     private String lastname;
-    @NotBlank(message = "email is required")
-    @Email(message = "email format is not valid")
-    private String email;
+    @NotBlank(message = "code is required")
+    private String code;
     @NotBlank(message = "password is required")
     @StrongPassword
     private String password;
