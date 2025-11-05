@@ -16,7 +16,7 @@ import java.util.Collection;
 @AllArgsConstructor
 @Data
 @Entity
-@Table(name = "_user")
+@Table(name = "user")
 public class User implements UserDetails { // make our app User a spring security User
     /*
         we have two options : implements the UserDetails interface or create a user class that extends User spring class which also
@@ -27,7 +27,7 @@ public class User implements UserDetails { // make our app User a spring securit
     private Long id;
     private String firstname;
     private String lastname;
-    private String code;
+    private String username;
     private String password;
     private boolean isActive;
 
@@ -47,7 +47,7 @@ public class User implements UserDetails { // make our app User a spring securit
 
     @Override
     public String getUsername() {
-        return code;
+        return username;
     }
 
     @Override

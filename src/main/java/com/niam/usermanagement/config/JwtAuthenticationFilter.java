@@ -54,14 +54,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             jwt = authHeader.substring(7); // after "Bearer "
         }
 
-        final String code = jwtService.extractUserName(jwt);
+        final String username = jwtService.extractUserName(jwt);
         /*
            SecurityContextHolder: is where Spring Security stores the details of who is authenticated.
            Spring Security uses that information for authorization.*/
 
-        if (StringUtils.isNotEmpty(code)
+        if (StringUtils.isNotEmpty(username)
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(code);
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
             if (jwtService.isTokenValid(jwt, userDetails)) {
                 //update the spring security context by adding a new UsernamePasswordAuthenticationToken
                 SecurityContext context = SecurityContextHolder.createEmptyContext();

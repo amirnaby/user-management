@@ -18,8 +18,8 @@ public class RegisterRequest {
     private String firstname;
     @NotBlank(message = "lastname is required")
     private String lastname;
-    @NotBlank(message = "code is required")
-    private String code;
+    @NotBlank(message = "username is required")
+    private String username;
     @NotBlank(message = "password is required")
     @StrongPassword
     private String password;

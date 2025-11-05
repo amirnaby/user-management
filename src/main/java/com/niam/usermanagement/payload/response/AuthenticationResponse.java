@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public class AuthenticationResponse {
     private Long id;
-    private String code;
+    private String username;
     private List<String> roles;
 
     @JsonProperty("access_token")

@@ -32,7 +32,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         var user = User.builder()
                 .firstname(request.getFirstname())
                 .lastname(request.getLastname())
-                .code(request.getCode())
+                .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
                 .build();
@@ -47,7 +47,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         return AuthenticationResponse.builder()
                 .accessToken(jwt)
-                .code(user.getCode())
+                .username(user.getUsername())
                 .id(user.getId())
                 .refreshToken(refreshToken.getToken())
                 .roles(roles)
@@ -58,9 +58,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getCode(), request.getPassword()));
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
-        var user = userRepository.findByCode(request.getCode()).orElseThrow(() -> new IllegalArgumentException("Invalid username or password."));
+        var user = userRepository.findByUsername(request.getUsername()).orElseThrow(() -> new IllegalArgumentException("Invalid username or password."));
         var roles = user.getRole().getAuthorities()
                 .stream()
                 .map(SimpleGrantedAuthority::getAuthority)
@@ -70,7 +70,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return AuthenticationResponse.builder()
                 .accessToken(jwt)
                 .roles(roles)
-                .code(user.getCode())
+                .username(user.getUsername())
                 .id(user.getId())
                 .refreshToken(refreshToken.getToken())
                 .tokenType(TokenType.BEARER.name())

@@ -93,7 +93,7 @@ public class AuthenticationController {
     @GetMapping("/info")
     public Authentication getAuthentication(@RequestBody AuthenticationRequest request) {
         return authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getCode(), request.getPassword()));
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
     }
 
     @PostMapping("/logout")
