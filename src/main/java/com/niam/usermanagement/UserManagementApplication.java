@@ -2,7 +2,9 @@ package com.niam.usermanagement;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
+@EnableJpaAuditing
 @SpringBootApplication(scanBasePackages = "com.niam")
 public class UserManagementApplication {
     public static void main(String[] args) {

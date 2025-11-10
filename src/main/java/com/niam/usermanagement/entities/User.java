@@ -1,32 +1,33 @@
 package com.niam.usermanagement.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.niam.usermanagement.enums.Role;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 
-@Builder
-@NoArgsConstructor
+// make our app User a spring security User
+// we have two options : implements the UserDetails interface or create a user class that extends User spring class which also implements UserDetails
+@SuperBuilder
 @AllArgsConstructor
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Data
-@Entity
-@Table(name = "user")
-public class User implements UserDetails { // make our app User a spring security User
-    /*
-        we have two options : implements the UserDetails interface or create a user class that extends User spring class which also
-        implements UserDetails
-     */
+@Entity(name = "Users")
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"username"}))
+@SequenceGenerator(name = "Users_seq", sequenceName = "Users_seq", allocationSize = 1)
+public class User extends Auditable implements UserDetails {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "Users_seq")
     private Long id;
     private String firstname;
     private String lastname;
+    @Column(unique = true)
     private String username;
     private String password;
     private boolean isActive;

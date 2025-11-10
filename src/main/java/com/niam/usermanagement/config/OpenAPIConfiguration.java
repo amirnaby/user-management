@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
-import io.swagger.v3.oas.annotations.servers.Server;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,20 +19,13 @@ import org.springframework.context.annotation.Configuration;
 @OpenAPIDefinition(
         info = @Info(
                 contact = @Contact(
-                        name = "Amir",
+                        name = "Amir Naby",
                         email = "naby1371@gmail.com"
                 ),
-                title = "Spring Security 6+ APP",
-                description = "Spring Boot 3+ Spring Security 6+",
+                title = "Kardan",
+                description = "Kardan App",
                 version = "1.0.0"
         ),
-        servers = {
-                @Server(
-                        description = "Development",
-                        url = "http://localhost:8086"
-
-                )
-        },
         security = {
                 @SecurityRequirement(
                         name = "bearerAuth"
