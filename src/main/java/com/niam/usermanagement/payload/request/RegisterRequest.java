@@ -1,9 +1,7 @@
 package com.niam.usermanagement.payload.request;
 
-import com.niam.usermanagement.enums.Role;
-import com.niam.usermanagement.validation.StrongPassword;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,8 +19,17 @@ public class RegisterRequest {
     @NotBlank(message = "username is required")
     private String username;
     @NotBlank(message = "password is required")
-    @StrongPassword
     private String password;
-    @NotNull
-    private Role role;
+    @NotBlank(message = "email is required")
+    @Email
+    private String email;
+    @NotBlank(message = "mobile is required")
+    private String mobile;
+
+    /**
+     * roleName optional: if null, default role will be used (e.g. ROLE_USER)
+     * For safety in production, registration with privilege roles should be prevented,
+     * or system should ignore roleName and always assign default.
+     */
+    private String roleName;
 }

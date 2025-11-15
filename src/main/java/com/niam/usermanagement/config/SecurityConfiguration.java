@@ -1,6 +1,9 @@
 package com.niam.usermanagement.config;
 
+import com.niam.usermanagement.captcha.CaptchaProvider;
+import com.niam.usermanagement.captcha.CaptchaRegistry;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,12 +31,18 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 public class SecurityConfiguration {
     private static final Long MAX_AGE = 3600L;
     private static final int CORS_FILTER_ORDER = -102;
-    /* At the application startup, during configuration, spring security will try to look for a bean of type SecurityFilterChain
-       this bean is responsible for configuring all the HTTP security of our application */
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AuthenticationProvider authenticationProvider;
     private final Http401UnauthorizedEntryPoint unauthorizedEntryPoint;
     private final CustomAccessDeniedHandler accessDeniedHandler;
+    private final CaptchaRegistry captchaRegistry;
+
+    @Value("${app.captcha.enabled:false}")
+    private boolean captchaEnabled;
+
+    @Value("${app.captcha.provider:localCaptchaProvider}")
+    private String captchaProviderName;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -54,8 +63,18 @@ public class SecurityConfiguration {
                                 ).permitAll()
                                 .anyRequest().authenticated())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(STATELESS))
-                .authenticationProvider(authenticationProvider).addFilterBefore(
-                        jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .authenticationProvider(authenticationProvider);
+
+        // If CAPTCHA enabled, add validation filter before UsernamePasswordAuthenticationFilter
+        if (captchaEnabled) {
+            CaptchaProvider provider = captchaRegistry.get(captchaProviderName);
+            CaptchaValidationFilter captchaFilter = new CaptchaValidationFilter(provider);
+            http.addFilterBefore(captchaFilter, UsernamePasswordAuthenticationFilter.class);
+        }
+
+        // JWT must be checked for every request (after captcha check)
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
@@ -64,7 +83,7 @@ public class SecurityConfiguration {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("*");
+        config.addAllowedOriginPattern("*");
         config.setAllowedHeaders(Arrays.asList(
                 HttpHeaders.AUTHORIZATION,
                 HttpHeaders.CONTENT_TYPE,
@@ -76,8 +95,7 @@ public class SecurityConfiguration {
                 HttpMethod.DELETE.name()));
         config.setMaxAge(MAX_AGE);
         source.registerCorsConfiguration("/**", config);
-        FilterRegistrationBean bean = new FilterRegistrationBean(new CorsFilter(source));
-        // should be set order to -100 because we need to CorsFilter before SpringSecurityFilter
+        FilterRegistrationBean<org.springframework.web.filter.CorsFilter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
         bean.setOrder(CORS_FILTER_ORDER);
         return bean;
     }

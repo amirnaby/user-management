@@ -1,6 +1,7 @@
 package com.niam.usermanagement.service;
 
 import com.niam.usermanagement.entities.RefreshToken;
+import com.niam.usermanagement.entities.User;
 import com.niam.usermanagement.payload.request.RefreshTokenRequest;
 import com.niam.usermanagement.payload.response.RefreshTokenResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,4 +25,6 @@ public interface RefreshTokenService {
     void deleteByToken(String token);
 
     ResponseCookie getCleanRefreshTokenCookie();
+
+    void revokeTokensByUser(User user);
 }

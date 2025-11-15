@@ -1,28 +1,32 @@
 package com.niam.usermanagement.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 
-@Data
-@Builder
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Entity
+@Table(name = "um_refresh_token")
 public class RefreshToken {
-    public boolean revoked;
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
-    @ManyToOne
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
+
     @Column(nullable = false, unique = true)
     private String token;
+
     @Column(nullable = false)
     private Instant expiryDate;
+
+    @Column(nullable = false)
+    private boolean revoked = false;
 }

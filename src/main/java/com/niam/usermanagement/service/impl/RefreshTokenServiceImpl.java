@@ -16,11 +16,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.WebUtils;
 
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,6 +33,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
+    private final UserDetailsService userDetailsService;
 
     @Value("${application.security.jwt.refresh-token.expiration}")
     private long refreshExpiration;
@@ -115,5 +118,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .httpOnly(true)
                 .maxAge(0)
                 .build();
+    }
+
+    @Override
+    public void revokeTokensByUser(User user) {
+        List<RefreshToken> refreshTokenList = refreshTokenRepository.findAllByUser(user);
+        refreshTokenRepository.deleteAll(refreshTokenList);
     }
 }

@@ -18,14 +18,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class ApplicationSecurityConfig {
     private final UserRepository userRepository;
 
-    /**
-     * we provide an implementation of the UserDetailsService functional interface, which has a loadByUsername method
-     * throws UsernameNotFoundException
-     */
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 
     @Bean
