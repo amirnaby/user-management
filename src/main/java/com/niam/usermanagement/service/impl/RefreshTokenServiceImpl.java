@@ -1,13 +1,13 @@
 package com.niam.usermanagement.service.impl;
 
-import com.niam.usermanagement.entities.RefreshToken;
-import com.niam.usermanagement.entities.User;
-import com.niam.usermanagement.enums.TokenType;
 import com.niam.usermanagement.exception.TokenException;
-import com.niam.usermanagement.payload.request.RefreshTokenRequest;
-import com.niam.usermanagement.payload.response.RefreshTokenResponse;
-import com.niam.usermanagement.repository.RefreshTokenRepository;
-import com.niam.usermanagement.repository.UserRepository;
+import com.niam.usermanagement.model.entities.RefreshToken;
+import com.niam.usermanagement.model.entities.User;
+import com.niam.usermanagement.model.enums.TokenType;
+import com.niam.usermanagement.model.payload.request.RefreshTokenRequest;
+import com.niam.usermanagement.model.payload.response.RefreshTokenResponse;
+import com.niam.usermanagement.model.repository.RefreshTokenRepository;
+import com.niam.usermanagement.model.repository.UserRepository;
 import com.niam.usermanagement.service.JwtService;
 import com.niam.usermanagement.service.RefreshTokenService;
 import jakarta.servlet.http.Cookie;
@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.WebUtils;
 
 import java.time.Instant;
@@ -36,33 +37,24 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private final UserDetailsService userDetailsService;
 
     @Value("${application.security.jwt.refresh-token.expiration}")
-    private long refreshExpiration;
+    private long refreshExpiration; // ms
+
     @Value("${application.security.jwt.refresh-token.cookie-name}")
     private String refreshTokenName;
 
     @Override
+    @Transactional
     public RefreshToken createRefreshToken(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        String tokenValue = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(UUID.randomUUID().toString().getBytes());
         RefreshToken refreshToken = RefreshToken.builder()
                 .revoked(false)
                 .user(user)
-                .token(Base64.getEncoder().encodeToString(UUID.randomUUID().toString().getBytes()))
+                .token(tokenValue)
                 .expiryDate(Instant.now().plusMillis(refreshExpiration))
                 .build();
         return refreshTokenRepository.save(refreshToken);
-    }
-
-    @Override
-    public RefreshToken verifyExpiration(RefreshToken token) {
-        if (token == null) {
-            log.error("Token is null");
-            throw new TokenException(null, "Token is null");
-        }
-        if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
-            refreshTokenRepository.delete(token);
-            throw new TokenException(token.getToken(), "Refresh token was expired. Please make a new authentication request");
-        }
-        return token;
     }
 
     @Override
@@ -71,16 +63,61 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     @Override
-    public RefreshTokenResponse generateNewToken(RefreshTokenRequest request) {
-        User user = refreshTokenRepository.findByToken(request.getRefreshToken())
-                .map(this::verifyExpiration)
-                .map(RefreshToken::getUser)
-                .orElseThrow(() -> new TokenException(request.getRefreshToken(), "Refresh token does not exist"));
+    @Transactional
+    public void verifyExpiration(RefreshToken token) {
+        if (token == null) {
+            log.error("Token is null");
+            throw new TokenException(null, "Token is null");
+        }
+        if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
+            refreshTokenRepository.delete(token);
+            throw new TokenException(token.getToken(), "Refresh token was expired. Please authenticate again");
+        }
+    }
 
-        String token = jwtService.generateToken(user);
+    /**
+     * Rotate refresh token: oldToken -> newToken
+     * If oldToken is revoked -> replay attack -> revoke all user's tokens and throw
+     */
+    @Transactional
+    @Override
+    public RefreshToken rotateRefreshToken(String oldToken) {
+        RefreshToken existing = refreshTokenRepository.findByToken(oldToken)
+                .orElseThrow(() -> new TokenException(oldToken, "Refresh token not found"));
+
+        // check expiry
+        verifyExpiration(existing);
+
+        if (existing.isRevoked()) {
+            // replay detected -> revoke all user's tokens
+            log.warn("Detected refresh token replay for userId={}", existing.getUser().getId());
+            revokeTokensByUser(existing.getUser());
+            throw new TokenException(oldToken, "Refresh token replay detected. All sessions revoked. Please login again.");
+        }
+
+        // mark existing revoked (single-use)
+        existing.setRevoked(true);
+        refreshTokenRepository.save(existing);
+
+        // create and return new token
+        return createRefreshToken(existing.getUser().getId());
+    }
+
+    @Override
+    @Transactional
+    public RefreshTokenResponse generateNewToken(RefreshTokenRequest request) {
+        // rotate and generate access token
+        RefreshToken newRefresh = rotateRefreshToken(request.getRefreshToken());
+        User user = newRefresh.getUser();
+
+        // userDetailsService used to validate or fetch authorities (but not adding to token)
+        userDetailsService.loadUserByUsername(user.getUsername());
+
+        String accessToken = jwtService.generateToken(user);
+
         return RefreshTokenResponse.builder()
-                .accessToken(token)
-                .refreshToken(request.getRefreshToken())
+                .accessToken(accessToken)
+                .refreshToken(newRefresh.getToken())
                 .tokenType(TokenType.BEARER.name())
                 .build();
     }
@@ -89,7 +126,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public ResponseCookie generateRefreshTokenCookie(String token) {
         return ResponseCookie.from(refreshTokenName, token)
                 .path("/")
-                .maxAge(refreshExpiration / 1000) // 15 days in seconds
+                .maxAge(refreshExpiration / 1000)
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("Strict")
@@ -99,16 +136,22 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     public String getRefreshTokenFromCookies(HttpServletRequest request) {
         Cookie cookie = WebUtils.getCookie(request, refreshTokenName);
-        if (cookie != null) {
-            return cookie.getValue();
-        } else {
-            return "";
-        }
+        return cookie != null ? cookie.getValue() : "";
     }
 
     @Override
+    @Transactional
     public void deleteByToken(String token) {
         refreshTokenRepository.findByToken(token).ifPresent(refreshTokenRepository::delete);
+    }
+
+    @Override
+    @Transactional
+    public void revokeTokensByUser(User user) {
+        List<RefreshToken> list = refreshTokenRepository.findAllByUser(user);
+        if (list != null && !list.isEmpty()) {
+            refreshTokenRepository.deleteAll(list);
+        }
     }
 
     @Override
@@ -118,11 +161,5 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .httpOnly(true)
                 .maxAge(0)
                 .build();
-    }
-
-    @Override
-    public void revokeTokensByUser(User user) {
-        List<RefreshToken> refreshTokenList = refreshTokenRepository.findAllByUser(user);
-        refreshTokenRepository.deleteAll(refreshTokenList);
     }
 }

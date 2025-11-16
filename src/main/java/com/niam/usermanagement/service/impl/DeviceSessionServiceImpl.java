@@ -1,0 +1,83 @@
+package com.niam.usermanagement.service.impl;
+
+import com.niam.usermanagement.model.entities.DeviceSession;
+import com.niam.usermanagement.model.repository.DeviceSessionRepository;
+import com.niam.usermanagement.service.DeviceSessionService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.Base64;
+import java.util.Comparator;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class DeviceSessionServiceImpl implements DeviceSessionService {
+    private final DeviceSessionRepository deviceSessionRepository;
+
+    @Value("${app.security.max.sessions.per.user:3}")
+    private int maxSessions;
+
+    @Value("${app.security.session.policy:KICK_OLDEST}")
+    private String policy;
+
+    @Override
+    public void registerLogin(Long userId, String ip, String userAgent) {
+        String deviceId = generateDeviceId(ip, userAgent);
+
+        deviceSessionRepository.save(DeviceSession.builder()
+                .userId(userId)
+                .deviceId(deviceId)
+                .userAgent(userAgent)
+                .ip(ip)
+                .active(true)
+                .createdAt(Instant.now())
+                .build());
+
+        enforceLimit(userId);
+    }
+
+    private void enforceLimit(Long userId) {
+        List<DeviceSession> sessions = deviceSessionRepository.findAllByUserIdAndActiveTrue(userId);
+        if (sessions.size() <= maxSessions) return;
+
+        if ("DENY_NEW".equalsIgnoreCase(policy)) {
+            DeviceSession newest = sessions.stream()
+                    .max(Comparator.comparing(DeviceSession::getCreatedAt))
+                    .orElse(null);
+            if (newest != null) {
+                deviceSessionRepository.delete(newest);
+                throw new IllegalStateException("Maximum sessions reached");
+            }
+        } else {
+            sessions.sort(Comparator.comparing(DeviceSession::getCreatedAt));
+            int toRemove = sessions.size() - maxSessions;
+            for (int i = 0; i < toRemove; i++) {
+                DeviceSession s = sessions.get(i);
+                s.setActive(false);
+                deviceSessionRepository.save(s);
+            }
+        }
+    }
+
+    @Override
+    public List<DeviceSession> listSessions(Long userId) {
+        return deviceSessionRepository.findAllByUserId(userId);
+    }
+
+    @Override
+    public void revokeSession(Long sessionId) {
+        deviceSessionRepository.findById(sessionId).ifPresent(s -> {
+            s.setActive(false);
+            deviceSessionRepository.save(s);
+        });
+    }
+
+    @Override
+    public String generateDeviceId(String ip, String userAgent) {
+        return Base64.getUrlEncoder().withoutPadding()
+                .encodeToString((ip + "|" + userAgent).getBytes());
+    }
+}

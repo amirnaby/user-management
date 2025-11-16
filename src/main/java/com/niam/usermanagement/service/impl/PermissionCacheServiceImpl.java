@@ -1,0 +1,50 @@
+package com.niam.usermanagement.service.impl;
+
+import com.niam.usermanagement.model.entities.Permission;
+import com.niam.usermanagement.model.repository.PermissionRepository;
+import com.niam.usermanagement.service.PermissionCacheService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Simple permission cache keyed by userId. TTL-based.
+ * Suitable for single-instance or dev. Replace with Redis/Caffeine if needed.
+ */
+@Service
+@RequiredArgsConstructor
+public class PermissionCacheServiceImpl implements PermissionCacheService {
+    private final PermissionRepository permissionRepository;
+    private final Map<Long, Entry> cache = new ConcurrentHashMap<>();
+    @Value("${app.permission.cache.ttl.seconds:300}")
+    private long ttlSeconds;
+
+    @Override
+    public List<Permission> getPermissionsForUser(Long userId) {
+        Entry e = cache.get(userId);
+        if (e != null && Instant.now().isBefore(e.expiresAt)) {
+            return e.perms;
+        }
+        List<Permission> perms = permissionRepository.findAllByUserId(userId);
+        cache.put(userId, new Entry(perms, Instant.now().plusSeconds(ttlSeconds)));
+        return perms;
+    }
+
+    @Override
+    public void invalidateUser(Long userId) {
+        cache.remove(userId);
+    }
+
+    @Override
+    public void invalidateAll() {
+        cache.clear();
+    }
+
+    private record Entry(List<Permission> perms, Instant expiresAt) {
+    }
+}

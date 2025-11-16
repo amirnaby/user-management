@@ -1,26 +1,30 @@
 package com.niam.usermanagement.service.impl;
 
-import com.niam.usermanagement.entities.Role;
-import com.niam.usermanagement.entities.User;
-import com.niam.usermanagement.payload.request.AuthenticationRequest;
-import com.niam.usermanagement.payload.request.ChangePasswordRequest;
-import com.niam.usermanagement.payload.request.RegisterRequest;
-import com.niam.usermanagement.payload.request.ResetPasswordRequest;
-import com.niam.usermanagement.payload.response.AuthenticationResponse;
-import com.niam.usermanagement.repository.RoleRepository;
-import com.niam.usermanagement.repository.UserRepository;
-import com.niam.usermanagement.service.AuthenticationService;
-import com.niam.usermanagement.service.JwtService;
-import com.niam.usermanagement.service.RefreshTokenService;
+import com.niam.common.exception.IllegalArgumentException;
+import com.niam.usermanagement.model.entities.PasswordHistory;
+import com.niam.usermanagement.model.entities.Role;
+import com.niam.usermanagement.model.entities.User;
+import com.niam.usermanagement.model.payload.request.AuthenticationRequest;
+import com.niam.usermanagement.model.payload.request.ChangePasswordRequest;
+import com.niam.usermanagement.model.payload.request.RegisterRequest;
+import com.niam.usermanagement.model.payload.request.ResetPasswordRequest;
+import com.niam.usermanagement.model.payload.response.AuthenticationResponse;
+import com.niam.usermanagement.model.repository.PasswordHistoryRepository;
+import com.niam.usermanagement.model.repository.RoleRepository;
+import com.niam.usermanagement.model.repository.UserRepository;
+import com.niam.usermanagement.service.*;
 import com.niam.usermanagement.utils.AuthUtils;
+import com.niam.usermanagement.utils.RequestUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,23 +32,22 @@ import java.util.stream.Collectors;
 @Transactional("transactionManager")
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final AttemptService attemptService;
+    private final AccountLockService accountLockService;
+    private final DeviceSessionService deviceSessionService;
+    private final PasswordEncoder passwordEncoder;
+    private final PasswordHistoryRepository passwordHistoryRepository;
+    private final PasswordExpirationService passwordExpirationService;
+    private final AuditLogService auditLogService;
     private final AuthUtils authUtils;
-
-    @Value("${app.registration.enabled:true}")
-    private boolean registrationEnabled;
 
     @Override
     public AuthenticationResponse register(RegisterRequest request) {
-        if (!registrationEnabled) {
-            throw new IllegalStateException("User registration is disabled");
-        }
-
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
         }
@@ -94,11 +97,55 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+    public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletRequest servletRequest) {
+        String ip = RequestUtils.getClientIp(servletRequest);
+        String userAgent = RequestUtils.getUserAgent(servletRequest);
+        String username = request.getUsername();
 
-        User user = userRepository.findByUsername(request.getUsername()).orElseThrow(() -> new IllegalArgumentException("Invalid username or password."));
+        boolean ipOk = !attemptService.isIpBlocked(ip);
+        boolean userOk = !attemptService.isUsernameBlocked(username);
+
+        if (!ipOk)
+            throw new IllegalStateException("Too many requests from your IP");
+
+        if (!userOk)
+            throw new IllegalStateException("Too many login attempts for this username");
+
+        try {
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                    username, request.getPassword()));
+        } catch (BadCredentialsException ex) {
+            attemptService.registerFailureForIp(ip);
+            attemptService.registerFailureForUsername(username);
+            auditLogService.log(null, username, "LOGIN_FAIL", ip, userAgent);
+
+            boolean blockNow = !attemptService.registerFailureForUsername(username);
+            if (blockNow) {
+                userRepository.findByUsername(username).ifPresent(accountLockService::lock);
+            }
+
+            throw ex;
+        }
+
+        attemptService.registerSuccess(username, ip);
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password."));
+
+        accountLockService.unlockIfExpired(user);
+        if (user.isAccountLocked())
+            throw new IllegalStateException("Account locked until: " + user.getLockUntil());
+
+        if (passwordExpirationService.isExpired(user)) {
+            user.setMustChangePassword(true);
+            userRepository.save(user);
+            return AuthenticationResponse.builder()
+                    .mustChangePassword(true)
+                    .build();
+        }
+
+        // DEVICE SESSION (old API kept exactly)
+        deviceSessionService.registerLogin(user.getId(), ip, userAgent);
 
         var jwt = jwtService.generateToken(user);
         var refreshToken = refreshTokenService.createRefreshToken(user.getId());
@@ -106,6 +153,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         List<String> roles = user.getRoles().stream()
                 .map(Role::getName)
                 .collect(Collectors.toList());
+
+        auditLogService.log(user.getId(), user.getUsername(), "LOGIN_SUCCESS", ip, userAgent);
 
         return AuthenticationResponse.builder()
                 .accessToken(jwt)
@@ -117,7 +166,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .build();
     }
 
-    public void changePassword(ChangePasswordRequest request) {
+    @Override
+    public void changePassword(ChangePasswordRequest request, HttpServletRequest servletRequest) {
+        String ip = RequestUtils.getClientIp(servletRequest);
+        String userAgent = RequestUtils.getUserAgent(servletRequest);
+
         User currentUser = authUtils.getCurrentUser();
         if (!passwordEncoder.matches(request.getOldPassword(), currentUser.getPassword())) {
             throw new IllegalArgumentException("Old password is incorrect");
@@ -131,13 +184,24 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new IllegalArgumentException("New password must be different from old password");
         }
 
-        currentUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(currentUser);
+        checkPasswordHistoryAndSave(currentUser, request.getNewPassword(), false);
 
-        refreshTokenService.revokeTokensByUser(currentUser);
+        passwordHistoryRepository.save(
+                PasswordHistory.builder()
+                        .userId(currentUser.getId())
+                        .oldPasswordHash(currentUser.getPassword())
+                        .changedAt(Instant.now())
+                        .build()
+        );
+
+        auditLogService.log(null, currentUser.getUsername(), "PASS_CHANGED", ip, userAgent);
     }
 
-    public void resetPassword(ResetPasswordRequest request) {
+    @Override
+    public void resetPassword(ResetPasswordRequest request, HttpServletRequest servletRequest) {
+        String ip = RequestUtils.getClientIp(servletRequest);
+        String userAgent = RequestUtils.getUserAgent(servletRequest);
+
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
@@ -145,10 +209,32 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new IllegalArgumentException("Passwords do not match");
         }
 
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        checkPasswordHistoryAndSave(user, request.getNewPassword(), true);
+
+        passwordHistoryRepository.save(
+                PasswordHistory.builder()
+                        .userId(user.getId())
+                        .oldPasswordHash(user.getPassword())
+                        .changedAt(Instant.now())
+                        .build()
+        );
+
+        auditLogService.log(null, user.getUsername(), "PASS_RESET", ip, userAgent);
+    }
+
+    private void checkPasswordHistoryAndSave(User user, String newPassword, boolean mcp) {
+        List<PasswordHistory> last = passwordHistoryRepository.findTop5ByUserIdOrderByChangedAtDesc(user.getId());
+
+        for (PasswordHistory ph : last) {
+            if (passwordEncoder.matches(newPassword, ph.getOldPasswordHash()))
+                throw new IllegalArgumentException("Your new password has been used recently.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        if (mcp) user.setMustChangePassword(true);
+        passwordExpirationService.markChanged(user);
         userRepository.save(user);
 
         refreshTokenService.revokeTokensByUser(user);
     }
-
 }
