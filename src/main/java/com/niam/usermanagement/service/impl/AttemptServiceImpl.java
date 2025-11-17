@@ -1,6 +1,7 @@
 package com.niam.usermanagement.service.impl;
 
 import com.niam.usermanagement.service.AttemptService;
+import com.niam.usermanagement.utils.AuthUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -22,16 +23,6 @@ public class AttemptServiceImpl implements AttemptService {
     private int ipMax;
 
     @Override
-    public boolean allow(Deque<Instant> dq, int limit) {
-        Instant now = Instant.now();
-        Instant start = now.minusSeconds(windowSeconds);
-        while (!dq.isEmpty() && dq.peekFirst().isBefore(start)) dq.pollFirst();
-        if (dq.size() >= limit) return false;
-        dq.addLast(now);
-        return true;
-    }
-
-    @Override
     public boolean registerFailureForUsername(String username) {
         Deque<Instant> dq = usernameMap.computeIfAbsent(username, k -> new ConcurrentLinkedDeque<>());
         return allow(dq, usernameMax);
@@ -49,24 +40,26 @@ public class AttemptServiceImpl implements AttemptService {
         ipMap.remove(ip);
     }
 
-    // helpers
     @Override
     public boolean isUsernameBlocked(String username) {
+        return checkBlocked(username, usernameMap, usernameMax);
+    }
+
+    @Override
+    public boolean isIpBlocked(String ip) {
+        return checkBlocked(ip, ipMap, ipMax);
+    }
+
+    private boolean allow(Deque<Instant> dq, int limit) {
+        return AuthUtils.rateLimitHelper(dq, windowSeconds, limit);
+    }
+
+    private boolean checkBlocked(String username, Map<String, Deque<Instant>> usernameMap, int usernameMax) {
         Deque<Instant> dq = usernameMap.get(username);
         if (dq == null) return false;
         Instant now = Instant.now();
         Instant start = now.minusSeconds(windowSeconds);
         while (!dq.isEmpty() && dq.peekFirst().isBefore(start)) dq.pollFirst();
         return dq.size() >= usernameMax;
-    }
-
-    @Override
-    public boolean isIpBlocked(String ip) {
-        Deque<Instant> dq = ipMap.get(ip);
-        if (dq == null) return false;
-        Instant now = Instant.now();
-        Instant start = now.minusSeconds(windowSeconds);
-        while (!dq.isEmpty() && dq.peekFirst().isBefore(start)) dq.pollFirst();
-        return dq.size() >= ipMax;
     }
 }

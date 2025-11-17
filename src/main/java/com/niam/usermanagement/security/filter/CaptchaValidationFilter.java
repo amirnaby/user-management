@@ -1,5 +1,6 @@
 package com.niam.usermanagement.security.filter;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.niam.usermanagement.service.captcha.CaptchaProvider;
 import jakarta.servlet.FilterChain;
@@ -47,7 +48,7 @@ public class CaptchaValidationFilter extends OncePerRequestFilter {
 
         Map<String, Object> body;
         try {
-            body = objectMapper.readValue(request.getInputStream(), Map.class);
+            body = objectMapper.readValue(request.getInputStream(), new TypeReference<>() {});
         } catch (Exception ex) {
             respond(response, HttpServletResponse.SC_BAD_REQUEST, "Invalid JSON body");
             return;

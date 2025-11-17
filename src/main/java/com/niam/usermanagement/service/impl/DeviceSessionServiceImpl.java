@@ -75,8 +75,7 @@ public class DeviceSessionServiceImpl implements DeviceSessionService {
         });
     }
 
-    @Override
-    public String generateDeviceId(String ip, String userAgent) {
+    private String generateDeviceId(String ip, String userAgent) {
         return Base64.getUrlEncoder().withoutPadding()
                 .encodeToString((ip + "|" + userAgent).getBytes());
     }

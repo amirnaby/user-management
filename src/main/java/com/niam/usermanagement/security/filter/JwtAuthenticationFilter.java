@@ -50,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (jwt == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+        if (jwt == null && authHeader.startsWith("Bearer ")) {
             jwt = authHeader.substring(7);
         }
 

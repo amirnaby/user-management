@@ -10,6 +10,4 @@ public interface DeviceSessionService {
     List<DeviceSession> listSessions(Long userId);
 
     void revokeSessionForUser(Long sessionId, Long userId);
-
-    String generateDeviceId(String ip, String ua);
 }

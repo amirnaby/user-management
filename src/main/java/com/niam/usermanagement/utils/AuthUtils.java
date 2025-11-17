@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+import java.util.Deque;
+
 @Component
 @RequiredArgsConstructor
 public class AuthUtils {
@@ -25,5 +28,19 @@ public class AuthUtils {
         String xf = request.getHeader("X-Forwarded-For");
         if (xf != null && !xf.isBlank()) return xf.split(",")[0].trim();
         return request.getRemoteAddr();
+    }
+
+    public static boolean rateLimitHelper(Deque<Instant> dq, int windowSeconds, int maxResend) {
+        Instant now = Instant.now();
+        Instant windowStart = now.minusSeconds(windowSeconds);
+
+        while (!dq.isEmpty() && dq.peekFirst().isBefore(windowStart)) {
+            dq.pollFirst();
+        }
+
+        if (dq.size() >= maxResend) return false;
+
+        dq.addLast(now);
+        return true;
     }
 }

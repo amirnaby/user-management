@@ -1,6 +1,7 @@
 package com.niam.usermanagement.service.impl;
 
 import com.niam.usermanagement.service.RateLimitService;
+import com.niam.usermanagement.utils.AuthUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -23,17 +24,7 @@ public class RateLimitServiceImpl implements RateLimitService {
 
     @Override
     public boolean allow(Deque<Instant> deque, int limit) {
-        Instant now = Instant.now();
-        Instant windowStart = now.minusSeconds(windowSeconds);
-
-        // purge old
-        while (!deque.isEmpty() && deque.peekFirst().isBefore(windowStart)) {
-            deque.pollFirst();
-        }
-
-        if (deque.size() >= limit) return false;
-        deque.addLast(now);
-        return true;
+        return AuthUtils.rateLimitHelper(deque, windowSeconds, limit);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.niam.usermanagement.service.otp;
 
+import com.niam.usermanagement.utils.AuthUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -24,29 +25,19 @@ public class OtpRateLimitService {
     @Value("${app.otp.resend.window.seconds:600}")
     private int windowSeconds;
 
-    private boolean allow(String key) {
+    private boolean disallow(String key) {
         Deque<Instant> dq = map.computeIfAbsent(key, k -> new ConcurrentLinkedDeque<>());
-        Instant now = Instant.now();
-        Instant windowStart = now.minusSeconds(windowSeconds);
-
-        while (!dq.isEmpty() && dq.peekFirst().isBefore(windowStart)) {
-            dq.pollFirst();
-        }
-
-        if (dq.size() >= maxResend) return false;
-
-        dq.addLast(now);
-        return true;
+        return !AuthUtils.rateLimitHelper(dq, windowSeconds, maxResend);
     }
 
     public void checkLimitForUsername(String username) {
-        if (!allow("u:" + username)) {
+        if (disallow("u:" + username)) {
             throw new IllegalStateException("OTP resend limit reached for username");
         }
     }
 
     public void checkLimitForIp(String ip) {
-        if (!allow("ip:" + ip)) {
+        if (disallow("ip:" + ip)) {
             throw new IllegalStateException("OTP resend limit reached for IP");
         }
     }

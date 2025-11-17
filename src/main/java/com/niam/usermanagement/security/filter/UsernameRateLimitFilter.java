@@ -1,5 +1,6 @@
 package com.niam.usermanagement.security.filter;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.niam.usermanagement.service.RateLimitService;
 import jakarta.servlet.FilterChain;
@@ -28,7 +29,7 @@ public class UsernameRateLimitFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        // Apply to login endpoints and OTP send endpoints
+        // Apply to log in endpoints and OTP send endpoints
         return !(path.endsWith("/login") || path.endsWith("/login-otp") || path.endsWith("/send-otp") || path.contains("/passwordless"));
     }
 
@@ -47,13 +48,13 @@ public class UsernameRateLimitFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private String extractUsernameFromRequest(HttpServletRequest request) throws IOException {
+    private String extractUsernameFromRequest(HttpServletRequest request) {
         // try parameter first
         String u = request.getParameter("username");
         if (u != null && !u.isBlank()) return u;
         // then try JSON body
         try {
-            Map<String, Object> body = objectMapper.readValue(request.getInputStream(), Map.class);
+            Map<String, Object> body = objectMapper.readValue(request.getInputStream(), new TypeReference<>() {});
             Object uname = body.get("username");
             if (uname != null) return uname.toString();
         } catch (Exception ignored) {
