@@ -3,16 +3,17 @@ package com.niam.usermanagement.web.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+@Profile("demo")
 @RestController
 @RequestMapping("/api/v1")
 @PreAuthorize("hasAnyRole('ADMIN','USER')")
 @Tag(name = "Authorization", description = "The Authorization API. Contains a secure hello method")
 public class AuthorizationController {
-
     @GetMapping("/admin/resource")
     @PreAuthorize("hasAuthority('READ_PRIVILEGE') and hasRole('ADMIN')")
     @Operation(

@@ -5,10 +5,10 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.Set;
 
-import static com.niam.usermanagement.model.enums.Privilege.*;
+import static com.niam.usermanagement.model.enums.PRIVILEGE.*;
 
 @RequiredArgsConstructor
-public enum Role {
+public enum ROLE {
     ADMIN(
             Set.of(READ_PRIVILEGE, WRITE_PRIVILEGE, UPDATE_PRIVILEGE, DELETE_PRIVILEGE)
     ),
@@ -20,5 +20,5 @@ public enum Role {
     );
 
     @Getter
-    private final Set<Privilege> privileges;
+    private final Set<PRIVILEGE> PRIVILEGES;
 }

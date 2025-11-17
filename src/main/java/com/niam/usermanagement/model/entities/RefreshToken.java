@@ -12,21 +12,17 @@ import java.time.Instant;
 @Builder
 @Entity
 @Table(name = "um_refresh_token")
-public class RefreshToken {
+public class RefreshToken extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
-
     @Column(nullable = false, unique = true)
     private String token;
-
     @Column(nullable = false)
     private Instant expiryDate;
-
     @Column(nullable = false)
     private boolean revoked = false;
 }

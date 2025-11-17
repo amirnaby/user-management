@@ -1,4 +1,4 @@
-package com.niam.usermanagement.security;
+package com.niam.usermanagement.config;
 
 import com.niam.usermanagement.model.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

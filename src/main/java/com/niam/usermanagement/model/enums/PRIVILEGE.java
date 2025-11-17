@@ -3,7 +3,7 @@ package com.niam.usermanagement.model.enums;
 import lombok.Getter;
 
 @Getter
-public enum Privilege {
+public enum PRIVILEGE {
     READ_PRIVILEGE("READ_PRIVILEGE"),
     WRITE_PRIVILEGE("WRITE_PRIVILEGE"),
     UPDATE_PRIVILEGE("UPDATE_PRIVILEGE"),
@@ -11,7 +11,7 @@ public enum Privilege {
 
     private final String code;
 
-    Privilege(String code) {
+    PRIVILEGE(String code) {
         this.code = code;
     }
 }

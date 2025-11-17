@@ -1,6 +1,6 @@
 package com.niam.usermanagement.security.filter;
 
-import com.niam.usermanagement.web.CachedBodyHttpServletRequest;
+import com.niam.usermanagement.security.CachedBodyHttpServletRequest;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

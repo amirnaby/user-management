@@ -1,6 +1,6 @@
 package com.niam.usermanagement.security.filter;
 
-import com.niam.usermanagement.security.RateLimitService;
+import com.niam.usermanagement.service.RateLimitService;
 import com.niam.usermanagement.utils.AuthUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,6 +11,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Rate limits requests based on client IP, applied only to auth endpoints.
+ */
 @Component
 public class IpRateLimitFilter extends OncePerRequestFilter {
     private final RateLimitService rateLimitService;

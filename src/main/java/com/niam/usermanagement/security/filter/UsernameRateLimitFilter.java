@@ -1,7 +1,7 @@
 package com.niam.usermanagement.security.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.niam.usermanagement.security.RateLimitService;
+import com.niam.usermanagement.service.RateLimitService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +12,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * Rate limits authentication attempts for a specific username.
+ * Protects login, login-otp, send-otp, and passwordless flows.
+ */
 @Component
 public class UsernameRateLimitFilter extends OncePerRequestFilter {
     private final RateLimitService rateLimitService;

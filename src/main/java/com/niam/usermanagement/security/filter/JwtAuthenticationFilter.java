@@ -8,7 +8,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,14 +35,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * implementation is provided in config.ApplicationSecurityConfig
      */
     @Override
-    protected void doFilterInternal(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
-        // try to get JWT in cookie or in Authorization Header
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         String jwt = jwtService.getJwtFromRequest(request);
-        final String authHeader = request.getHeader("Authorization");
+        String authHeader = request.getHeader("Authorization");
+
         if (jwt != null && tokenBlacklistService.isBlacklisted(jwt)) {
             filterChain.doFilter(request, response);
             return;
@@ -54,29 +50,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // If the JWT is not in the cookies but in the "Authorization" header
-        if (jwt == null && authHeader.startsWith("Bearer ")) {
-            jwt = authHeader.substring(7); // after "Bearer "
+        if (jwt == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+            jwt = authHeader.substring(7);
         }
 
-        final String username = jwtService.extractUserName(jwt);
-        /* SecurityContextHolder: is where Spring Security stores the details of who is authenticated.
-           Spring Security uses that information for authorization.*/
-        if (StringUtils.isNotEmpty(username)
-                && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+        String username = jwtService.extractUserName(jwt);
+        if (StringUtils.isNotEmpty(username) &&
+                SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             if (jwtService.isTokenValid(jwt, userDetails)) {
-                //update the spring security context by adding a new UsernamePasswordAuthenticationToken
                 SecurityContext context = SecurityContextHolder.createEmptyContext();
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities());
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 context.setAuthentication(authToken);
                 SecurityContextHolder.setContext(context);
             }
         }
+
         filterChain.doFilter(request, response);
     }
 }

@@ -2,7 +2,7 @@ package com.niam.usermanagement.config.init;
 
 import com.niam.usermanagement.model.entities.Permission;
 import com.niam.usermanagement.model.entities.Role;
-import com.niam.usermanagement.model.enums.Privilege;
+import com.niam.usermanagement.model.enums.PRIVILEGE;
 import com.niam.usermanagement.model.repository.PermissionRepository;
 import com.niam.usermanagement.model.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ public class StartupDataLoader implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        for (Privilege sp : Privilege.values()) {
+        for (PRIVILEGE sp : PRIVILEGE.values()) {
             permissionRepository.findByCode(sp.getCode())
                     .orElseGet(() -> permissionRepository.save(Permission.builder()
                             .code(sp.getCode())
@@ -36,9 +36,9 @@ public class StartupDataLoader implements ApplicationRunner {
         }
 
         Map<String, Set<String>> roleToPerms = new HashMap<>();
-        roleToPerms.put("ROLE_ADMIN", Arrays.stream(Privilege.values()).map(Privilege::getCode).collect(Collectors.toSet()));
-        roleToPerms.put("ROLE_USER", Set.of(Privilege.READ_PRIVILEGE.getCode(), Privilege.WRITE_PRIVILEGE.getCode()));
-        roleToPerms.put("ROLE_OPERATOR", Set.of(Privilege.READ_PRIVILEGE.getCode(), Privilege.WRITE_PRIVILEGE.getCode()));
+        roleToPerms.put("ROLE_ADMIN", Arrays.stream(PRIVILEGE.values()).map(PRIVILEGE::getCode).collect(Collectors.toSet()));
+        roleToPerms.put("ROLE_USER", Set.of(PRIVILEGE.READ_PRIVILEGE.getCode(), PRIVILEGE.WRITE_PRIVILEGE.getCode()));
+        roleToPerms.put("ROLE_OPERATOR", Set.of(PRIVILEGE.READ_PRIVILEGE.getCode(), PRIVILEGE.WRITE_PRIVILEGE.getCode()));
 
         for (Map.Entry<String, Set<String>> e : roleToPerms.entrySet()) {
             String roleName = e.getKey();

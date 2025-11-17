@@ -68,8 +68,8 @@ public class DeviceSessionServiceImpl implements DeviceSessionService {
     }
 
     @Override
-    public void revokeSession(Long sessionId) {
-        deviceSessionRepository.findById(sessionId).ifPresent(s -> {
+    public void revokeSessionForUser(Long sessionId, Long userId) {
+        deviceSessionRepository.findAllByIdAndUserIdAndActiveTrue(sessionId, userId).forEach(s -> {
             s.setActive(false);
             deviceSessionRepository.save(s);
         });

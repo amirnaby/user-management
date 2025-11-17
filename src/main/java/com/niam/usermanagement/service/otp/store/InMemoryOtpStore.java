@@ -8,7 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class InMemoryOtpStore implements OtpStore {
-
     private final Map<String, Entry> store = new ConcurrentHashMap<>();
 
     @Override

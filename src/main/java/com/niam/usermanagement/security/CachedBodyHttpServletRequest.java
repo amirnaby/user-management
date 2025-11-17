@@ -1,4 +1,4 @@
-package com.niam.usermanagement.web;
+package com.niam.usermanagement.security;
 
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
@@ -6,29 +6,38 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * HttpServletRequest wrapper that caches the request body so it can be read multiple times.
+ * This is required because HttpServletRequest's input stream can be read only once.
+ * Filters such as CaptchaValidationFilter or UsernameRateLimitFilter need to read the body,
+ * and controllers also need to read it later.
+ */
 public class CachedBodyHttpServletRequest extends HttpServletRequestWrapper {
     private final byte[] cachedBody;
 
     public CachedBodyHttpServletRequest(HttpServletRequest request) throws IOException {
         super(request);
-        InputStream requestInputStream = request.getInputStream();
-        this.cachedBody = requestInputStream.readAllBytes();
+
+        try (InputStream is = request.getInputStream()) {
+            this.cachedBody = is.readAllBytes();
+        }
     }
 
     @Override
     public ServletInputStream getInputStream() {
-        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(this.cachedBody);
+        ByteArrayInputStream bais = new ByteArrayInputStream(this.cachedBody);
         return new ServletInputStream() {
             @Override
             public int read() {
-                return byteArrayInputStream.read();
+                return bais.read();
             }
 
             @Override
             public boolean isFinished() {
-                return byteArrayInputStream.available() == 0;
+                return bais.available() == 0;
             }
 
             @Override
@@ -37,7 +46,7 @@ public class CachedBodyHttpServletRequest extends HttpServletRequestWrapper {
             }
 
             @Override
-            public void setReadListener(ReadListener readListener) {
+            public void setReadListener(ReadListener listener) {
                 // not implemented
             }
         };
@@ -45,6 +54,8 @@ public class CachedBodyHttpServletRequest extends HttpServletRequestWrapper {
 
     @Override
     public BufferedReader getReader() {
-        return new BufferedReader(new InputStreamReader(this.getInputStream(), StandardCharsets.UTF_8));
+        String encoding = getCharacterEncoding();
+        Charset charset = encoding != null ? Charset.forName(encoding) : StandardCharsets.UTF_8;
+        return new BufferedReader(new InputStreamReader(getInputStream(), charset));
     }
 }

@@ -12,16 +12,13 @@ import java.util.Set;
 @Builder
 @Entity
 @Table(name = "um_user_groups", uniqueConstraints = @UniqueConstraint(columnNames = "name"))
-public class UserGroup {
+public class UserGroup extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @Column(nullable = false, unique = true)
     private String name;
-
     private String description;
-
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "um_group_roles",
             joinColumns = @JoinColumn(name = "group_id"),

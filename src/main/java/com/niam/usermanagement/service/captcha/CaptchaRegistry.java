@@ -5,8 +5,9 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 /**
- * Registry for captcha providers. Spring will inject all beans implementing CaptchaProvider.
- * You can add new providers with @Service("providerName")
+ * Registry that holds all CaptchaProvider beans.
+ * Providers must be registered with @Service("beanName").
+ * Example: localCaptchaProvider, googleCaptchaProvider, etc.
  */
 @Component
 public class CaptchaRegistry {
@@ -17,7 +18,10 @@ public class CaptchaRegistry {
     }
 
     /**
-     * Get provider by bean name. Returns null if not found.
+     * Returns provider with the given bean name.
+     *
+     * @param providerName Spring bean name
+     * @return CaptchaProvider or null if not found
      */
     public CaptchaProvider get(String providerName) {
         return providers.get(providerName);

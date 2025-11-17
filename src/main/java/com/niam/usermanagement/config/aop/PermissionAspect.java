@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 @Aspect
 @Component
 public class PermissionAspect {
-
     @Before("@annotation(hasPermission)")
     public void checkPermission(HasPermission hasPermission) {
         String required = hasPermission.value();

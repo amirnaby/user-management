@@ -12,6 +12,4 @@ public interface PermissionRepository extends JpaRepository<Permission, Long> {
 
     @Query("select distinct p from User u join u.roles r join r.permissions p where u.id = :userId")
     List<Permission> findAllByUserId(Long userId);
-
-    boolean existsByCode(String code);
 }

@@ -3,7 +3,7 @@ package com.niam.usermanagement.service.impl;
 import com.niam.usermanagement.exception.TokenException;
 import com.niam.usermanagement.model.entities.RefreshToken;
 import com.niam.usermanagement.model.entities.User;
-import com.niam.usermanagement.model.enums.TokenType;
+import com.niam.usermanagement.model.enums.TOKEN_TYPE;
 import com.niam.usermanagement.model.payload.request.RefreshTokenRequest;
 import com.niam.usermanagement.model.payload.response.RefreshTokenResponse;
 import com.niam.usermanagement.model.repository.RefreshTokenRepository;
@@ -118,7 +118,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         return RefreshTokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(newRefresh.getToken())
-                .tokenType(TokenType.BEARER.name())
+                .tokenType(TOKEN_TYPE.BEARER.name())
                 .build();
     }
 

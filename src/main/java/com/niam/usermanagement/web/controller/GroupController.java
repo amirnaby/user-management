@@ -7,6 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Group and Role assignment management. Only ADMIN can access.
+ */
 @RestController
 @RequestMapping("/api/v1/groups")
 @RequiredArgsConstructor
@@ -16,7 +19,8 @@ public class GroupController {
 
     @PostMapping
     public ResponseEntity<UserGroup> create(@RequestBody UserGroup dto) {
-        return ResponseEntity.ok(groupService.createGroup(dto.getName(), dto.getDescription()));
+        UserGroup created = groupService.createGroup(dto.getName(), dto.getDescription());
+        return ResponseEntity.ok(created);
     }
 
     @PostMapping("/{groupId}/roles/{roleId}")

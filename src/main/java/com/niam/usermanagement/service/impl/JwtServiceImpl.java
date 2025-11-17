@@ -194,6 +194,7 @@ public class JwtServiceImpl implements JwtService {
                 tokenBlacklistService.blacklist(jti, ttl);
             }
 
-        } catch (JwtException ignored) {}
+        } catch (JwtException ignored) {
+        }
     }
 }

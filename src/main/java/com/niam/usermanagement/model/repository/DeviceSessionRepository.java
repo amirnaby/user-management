@@ -8,5 +8,7 @@ import java.util.List;
 public interface DeviceSessionRepository extends JpaRepository<DeviceSession, Long> {
     List<DeviceSession> findAllByUserId(Long userId);
 
+    List<DeviceSession> findAllByIdAndUserIdAndActiveTrue(Long id, Long userId);
+
     List<DeviceSession> findAllByUserIdAndActiveTrue(Long userId);
 }
