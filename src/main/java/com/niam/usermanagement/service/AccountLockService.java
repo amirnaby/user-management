@@ -7,5 +7,5 @@ public interface AccountLockService {
 
     void unlockIfExpired(User user);
 
-    void forceUnlock(User user);
+    void forceUnlock(Long userId);
 }

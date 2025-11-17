@@ -1,4 +1,4 @@
-package com.niam.usermanagement.service.captcha;
+package com.niam.usermanagement.model.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

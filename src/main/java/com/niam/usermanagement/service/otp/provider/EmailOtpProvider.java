@@ -1,13 +1,15 @@
 package com.niam.usermanagement.service.otp.provider;
 
+import com.niam.usermanagement.model.dto.OtpRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 @Slf4j
-@Component("emailOtpProvider")
+@Service("emailOtpProvider")
 public class EmailOtpProvider implements OtpProvider {
     @Override
-    public void sendOtp(String destination, String code) {
-        log.info("Sending EMAIL OTP to {} => {}", destination, code);
+    public void send(OtpRequest request) {
+        log.info("Sending EMAIL OTP to {} => {}", request.destination(), request.code());
+        // call real email gateway
     }
 }

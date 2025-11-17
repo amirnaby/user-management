@@ -3,8 +3,7 @@ package com.niam.usermanagement.security;
 import com.niam.usermanagement.exception.handlers.CustomAccessDeniedHandler;
 import com.niam.usermanagement.exception.handlers.Http401UnauthorizedEntryPoint;
 import com.niam.usermanagement.security.filter.*;
-import com.niam.usermanagement.service.captcha.CaptchaProvider;
-import com.niam.usermanagement.service.captcha.CaptchaRegistry;
+import com.niam.usermanagement.service.captcha.provider.CaptchaProviderRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -38,7 +37,7 @@ public class SecurityConfiguration {
     private final AuthenticationProvider authenticationProvider;
     private final Http401UnauthorizedEntryPoint unauthorizedEntryPoint;
     private final CustomAccessDeniedHandler accessDeniedHandler;
-    private final CaptchaRegistry captchaRegistry;
+    private final CaptchaProviderRegistry captchaProviderRegistry;
     private final IpRateLimitFilter ipRateLimitFilter;
     private final UsernameRateLimitFilter usernameRateLimitFilter;
     private final CachedBodyFilter cachedBodyFilter;
@@ -46,9 +45,6 @@ public class SecurityConfiguration {
 
     @Value("${app.captcha.enabled:false}")
     private boolean captchaEnabled;
-
-    @Value("${app.captcha.provider:localCaptchaProvider}")
-    private String captchaProviderName;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -84,8 +80,7 @@ public class SecurityConfiguration {
         // validate captcha AFTER captcha rate limit
         if (captchaEnabled) {
             http.addFilterBefore(captchaRateLimitFilter, UsernamePasswordAuthenticationFilter.class);
-            CaptchaProvider provider = captchaRegistry.get(captchaProviderName);
-            CaptchaValidationFilter captchaFilter = new CaptchaValidationFilter(provider);
+            CaptchaValidationFilter captchaFilter = new CaptchaValidationFilter(captchaProviderRegistry);
             http.addFilterBefore(captchaFilter, UsernamePasswordAuthenticationFilter.class);
         }
 

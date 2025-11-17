@@ -102,26 +102,32 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String userAgent = RequestUtils.getUserAgent(servletRequest);
         String username = request.getUsername();
 
-        boolean ipOk = !attemptService.isIpBlocked(ip);
-        boolean userOk = !attemptService.isUsernameBlocked(username);
-
-        if (!ipOk)
+        // quick checks before auth: are we already blocked?
+        if (attemptService.isIpBlocked(ip)) {
             throw new IllegalStateException("Too many requests from your IP");
-
-        if (!userOk)
+        }
+        if (attemptService.isUsernameBlocked(username)) {
             throw new IllegalStateException("Too many login attempts for this username");
+        }
 
         try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                    username, request.getPassword()));
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, request.getPassword()));
         } catch (BadCredentialsException ex) {
-            attemptService.registerFailureForIp(ip);
-            attemptService.registerFailureForUsername(username);
+            // register failures and decide if block/lock should happen
+            boolean ipStillAllowed = attemptService.registerFailureForIp(ip); // <-- use return
+            boolean userStillAllowed = attemptService.registerFailureForUsername(username);
+
+            // log and audit
             auditLogService.log(null, username, "LOGIN_FAIL", ip, userAgent);
 
-            boolean blockNow = !attemptService.registerFailureForUsername(username);
-            if (blockNow) {
+            // if username crosses threshold now, lock account
+            if (!userStillAllowed) {
                 userRepository.findByUsername(username).ifPresent(accountLockService::lock);
+            }
+
+            // if ip crosses threshold now, optionally take action: here we just throw (could call a IP block action)
+            if (!ipStillAllowed) {
+                throw new IllegalStateException("Too many login attempts from your IP");
             }
 
             throw ex;
@@ -133,27 +139,22 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid username or password."));
 
         accountLockService.unlockIfExpired(user);
-        if (user.isAccountLocked())
+        if (user.isAccountLocked()) {
             throw new IllegalStateException("Account locked until: " + user.getLockUntil());
+        }
 
         if (passwordExpirationService.isExpired(user)) {
             user.setMustChangePassword(true);
             userRepository.save(user);
-            return AuthenticationResponse.builder()
-                    .mustChangePassword(true)
-                    .build();
+            return AuthenticationResponse.builder().mustChangePassword(true).build();
         }
 
-        // DEVICE SESSION (old API kept exactly)
         deviceSessionService.registerLogin(user.getId(), ip, userAgent);
 
-        var jwt = jwtService.generateToken(user);
+        String jwt = jwtService.generateToken(user);
         var refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
-        List<String> roles = user.getRoles().stream()
-                .map(Role::getName)
-                .collect(Collectors.toList());
-
+        List<String> roles = user.getRoles().stream().map(Role::getName).collect(Collectors.toList());
         auditLogService.log(user.getId(), user.getUsername(), "LOGIN_SUCCESS", ip, userAgent);
 
         return AuthenticationResponse.builder()

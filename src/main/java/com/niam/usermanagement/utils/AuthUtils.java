@@ -16,20 +16,6 @@ import java.util.Deque;
 public class AuthUtils {
     private final UserRepository userRepository;
 
-    public User getCurrentUser() {
-        String username = SecurityContextHolder.getContext()
-                .getAuthentication().getName();
-
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalStateException("Logged in user not found"));
-    }
-
-    public String extractClientIp(HttpServletRequest request) {
-        String xf = request.getHeader("X-Forwarded-For");
-        if (xf != null && !xf.isBlank()) return xf.split(",")[0].trim();
-        return request.getRemoteAddr();
-    }
-
     public static boolean rateLimitHelper(Deque<Instant> dq, int windowSeconds, int maxResend) {
         Instant now = Instant.now();
         Instant windowStart = now.minusSeconds(windowSeconds);
@@ -42,5 +28,19 @@ public class AuthUtils {
 
         dq.addLast(now);
         return true;
+    }
+
+    public User getCurrentUser() {
+        String username = SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalStateException("Logged in user not found"));
+    }
+
+    public String extractClientIp(HttpServletRequest request) {
+        String xf = request.getHeader("X-Forwarded-For");
+        if (xf != null && !xf.isBlank()) return xf.split(",")[0].trim();
+        return request.getRemoteAddr();
     }
 }

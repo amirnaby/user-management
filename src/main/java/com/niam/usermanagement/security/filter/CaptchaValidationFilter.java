@@ -2,11 +2,16 @@ package com.niam.usermanagement.security.filter;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.niam.usermanagement.service.captcha.CaptchaProvider;
+import com.niam.usermanagement.model.dto.CaptchaValidateRequest;
+import com.niam.usermanagement.model.enums.CaptchaProviderType;
+import com.niam.usermanagement.service.captcha.provider.CaptchaProvider;
+import com.niam.usermanagement.service.captcha.provider.CaptchaProviderRegistry;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -23,11 +28,23 @@ import java.util.Map;
  */
 @Component
 public class CaptchaValidationFilter extends OncePerRequestFilter {
-    private final CaptchaProvider captchaProvider;
+    private final CaptchaProviderRegistry captchaProviderRegistry;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private CaptchaProvider captchaProvider;
 
-    public CaptchaValidationFilter(CaptchaProvider captchaProvider) {
-        this.captchaProvider = captchaProvider;
+    @Value("${app.captcha.provider:LOCAL}")
+    private String captchaProviderName;
+
+    public CaptchaValidationFilter(CaptchaProviderRegistry captchaProviderRegistry) {
+        this.captchaProviderRegistry = captchaProviderRegistry;
+    }
+
+    @PostConstruct
+    public void init() {
+        captchaProvider = captchaProviderRegistry.get(CaptchaProviderType.valueOf(captchaProviderName.toUpperCase()));
+        if (captchaProvider == null) {
+            throw new IllegalStateException("CaptchaProvider not found for name: " + captchaProviderName);
+        }
     }
 
     @Override
@@ -48,7 +65,8 @@ public class CaptchaValidationFilter extends OncePerRequestFilter {
 
         Map<String, Object> body;
         try {
-            body = objectMapper.readValue(request.getInputStream(), new TypeReference<>() {});
+            body = objectMapper.readValue(request.getInputStream(), new TypeReference<>() {
+            });
         } catch (Exception ex) {
             respond(response, HttpServletResponse.SC_BAD_REQUEST, "Invalid JSON body");
             return;
@@ -66,7 +84,7 @@ public class CaptchaValidationFilter extends OncePerRequestFilter {
 
         boolean valid;
         try {
-            valid = captchaProvider.validate(token, resp);
+            valid = captchaProvider.validate(new CaptchaValidateRequest(token, resp));
         } catch (Exception ex) {
             respond(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Captcha validation failed");
             return;

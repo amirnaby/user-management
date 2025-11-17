@@ -10,4 +10,8 @@ public interface AttemptService {
     boolean isUsernameBlocked(String username);
 
     boolean isIpBlocked(String ip);
+
+    void resetUsername(String username);
+
+    void resetIp(String ip);
 }

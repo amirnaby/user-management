@@ -1,7 +1,10 @@
-package com.niam.usermanagement.service.captcha;
+package com.niam.usermanagement.service.captcha.provider;
 
 import com.google.code.kaptcha.impl.DefaultKaptcha;
 import com.google.code.kaptcha.util.Config;
+import com.niam.usermanagement.model.dto.CaptchaGenerateRequest;
+import com.niam.usermanagement.model.dto.CaptchaResponse;
+import com.niam.usermanagement.model.dto.CaptchaValidateRequest;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -20,15 +23,12 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Local (in-memory) captcha provider using Kaptcha library.
  * Stores token → (captchaText, expiresAt) in an in-memory map.
- * NOTE:
- * - Suitable for dev / single instance deployments.
- * - For production, replace store with Redis or any TTL-backed cache.
+ * Suitable for development / single-instance environments.
  */
 @Service("localCaptchaProvider")
 public class LocalCaptchaProvider implements CaptchaProvider {
     /**
      * token -> captcha entry (text + expiry)
-     * One-time-use: entry is removed after successful validation.
      */
     private final Map<String, CaptchaEntry> store = new ConcurrentHashMap<>();
 
@@ -46,17 +46,11 @@ public class LocalCaptchaProvider implements CaptchaProvider {
     @Value("${captcha.ttl.seconds:120}")
     private int ttlSeconds;
 
-    /**
-     * Initialize Kaptcha instance after properties are injected.
-     */
     @PostConstruct
     public void init() {
         this.kaptcha = buildKaptcha();
     }
 
-    /**
-     * Build and configure DefaultKaptcha generator.
-     */
     private DefaultKaptcha buildKaptcha() {
         DefaultKaptcha k = new DefaultKaptcha();
         Properties props = new Properties();
@@ -65,7 +59,7 @@ public class LocalCaptchaProvider implements CaptchaProvider {
         props.put("kaptcha.image.height", imgHeight);
         props.put("kaptcha.textproducer.char.length", charLength);
 
-        // Prevent OCR attacks by using mixed chars
+        // Random text set to avoid pattern detection
         props.put("kaptcha.textproducer.char.string", "abcde2345678gfynmnpwx");
 
         props.put("kaptcha.background.clear.from", "lightGray");
@@ -76,7 +70,7 @@ public class LocalCaptchaProvider implements CaptchaProvider {
     }
 
     @Override
-    public CaptchaResponse generate() {
+    public CaptchaResponse generate(CaptchaGenerateRequest request) {
         String text = kaptcha.createText();
         BufferedImage image = kaptcha.createImage(text);
 
@@ -90,13 +84,17 @@ public class LocalCaptchaProvider implements CaptchaProvider {
             store.put(token, new CaptchaEntry(text, expiresAt));
 
             return new CaptchaResponse(token, base64, ttlSeconds);
+
         } catch (IOException ex) {
             throw new RuntimeException("Failed to generate captcha", ex);
         }
     }
 
     @Override
-    public boolean validate(String token, String userResponse) {
+    public boolean validate(CaptchaValidateRequest request) {
+        String token = request.token();
+        String userResponse = request.response();
+
         if (token == null || userResponse == null) return false;
 
         CaptchaEntry entry = store.get(token);
@@ -110,13 +108,13 @@ public class LocalCaptchaProvider implements CaptchaProvider {
 
         boolean ok = entry.text().equalsIgnoreCase(userResponse.trim());
 
-        if (ok) store.remove(token); // enforce one-time usage
+        if (ok) store.remove(token); // one-time use
 
         return ok;
     }
 
     /**
-     * Simple record to store captcha text + expiry time
+     * Simple record to store captcha text + expiry time.
      */
     private record CaptchaEntry(String text, Instant expiresAt) {
     }

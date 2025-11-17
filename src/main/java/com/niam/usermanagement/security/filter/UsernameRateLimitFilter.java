@@ -54,7 +54,8 @@ public class UsernameRateLimitFilter extends OncePerRequestFilter {
         if (u != null && !u.isBlank()) return u;
         // then try JSON body
         try {
-            Map<String, Object> body = objectMapper.readValue(request.getInputStream(), new TypeReference<>() {});
+            Map<String, Object> body = objectMapper.readValue(request.getInputStream(), new TypeReference<>() {
+            });
             Object uname = body.get("username");
             if (uname != null) return uname.toString();
         } catch (Exception ignored) {

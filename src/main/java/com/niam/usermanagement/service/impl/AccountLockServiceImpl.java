@@ -34,7 +34,8 @@ public class AccountLockServiceImpl implements AccountLockService {
     }
 
     @Override
-    public void forceUnlock(User user) {
+    public void forceUnlock(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow();
         user.setAccountLocked(false);
         user.setLockUntil(null);
         userRepository.save(user);

@@ -13,36 +13,56 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 
 @Service
 public class AttemptServiceImpl implements AttemptService {
-    private final Map<String, Deque<Instant>> usernameMap = new ConcurrentHashMap<>();
     private final Map<String, Deque<Instant>> ipMap = new ConcurrentHashMap<>();
+    private final Map<String, Deque<Instant>> userMap = new ConcurrentHashMap<>();
+
     @Value("${app.security.attempt.window.seconds:300}")
     private int windowSeconds;
+
     @Value("${app.security.attempt.username.max:5}")
     private int usernameMax;
+
     @Value("${app.security.attempt.ip.max:50}")
     private int ipMax;
 
+    private boolean allow(Deque<Instant> dq, int limit) {
+        return AuthUtils.rateLimitHelper(dq, windowSeconds, limit);
+    }
+
+    /**
+     * Register a failed attempt for username.
+     *
+     * @return true if still allowed (not blocked), false if this call finds the username exceeded limit.
+     */
     @Override
     public boolean registerFailureForUsername(String username) {
-        Deque<Instant> dq = usernameMap.computeIfAbsent(username, k -> new ConcurrentLinkedDeque<>());
+        Deque<Instant> dq = userMap.computeIfAbsent(username, k -> new ConcurrentLinkedDeque<>());
         return allow(dq, usernameMax);
     }
 
+    /**
+     * Register a failed attempt for ip.
+     *
+     * @return true if still allowed (not blocked), false if this call finds the ip exceeded limit.
+     */
     @Override
     public boolean registerFailureForIp(String ip) {
         Deque<Instant> dq = ipMap.computeIfAbsent(ip, k -> new ConcurrentLinkedDeque<>());
         return allow(dq, ipMax);
     }
 
+    /**
+     * Register success: clear counters for username and ip (or decrement policy).
+     */
     @Override
     public void registerSuccess(String username, String ip) {
-        usernameMap.remove(username);
-        ipMap.remove(ip);
+        if (username != null) userMap.remove(username);
+        if (ip != null) ipMap.remove(ip);
     }
 
     @Override
     public boolean isUsernameBlocked(String username) {
-        return checkBlocked(username, usernameMap, usernameMax);
+        return checkBlocked(username, userMap, usernameMax);
     }
 
     @Override
@@ -50,15 +70,20 @@ public class AttemptServiceImpl implements AttemptService {
         return checkBlocked(ip, ipMap, ipMax);
     }
 
-    private boolean allow(Deque<Instant> dq, int limit) {
-        return AuthUtils.rateLimitHelper(dq, windowSeconds, limit);
+    @Override
+    public void resetUsername(String username) {
+        userMap.remove(username);
     }
 
-    private boolean checkBlocked(String username, Map<String, Deque<Instant>> usernameMap, int usernameMax) {
-        Deque<Instant> dq = usernameMap.get(username);
+    @Override
+    public void resetIp(String ip) {
+        ipMap.remove(ip);
+    }
+
+    private boolean checkBlocked(String username, Map<String, Deque<Instant>> userMap, int usernameMax) {
+        Deque<Instant> dq = userMap.get(username);
         if (dq == null) return false;
-        Instant now = Instant.now();
-        Instant start = now.minusSeconds(windowSeconds);
+        Instant start = Instant.now().minusSeconds(windowSeconds);
         while (!dq.isEmpty() && dq.peekFirst().isBefore(start)) dq.pollFirst();
         return dq.size() >= usernameMax;
     }
