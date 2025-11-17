@@ -94,7 +94,7 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public FilterRegistrationBean corsFilter() {
+    public FilterRegistrationBean<CorsFilter> corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
@@ -103,10 +103,7 @@ public class SecurityConfiguration {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
         config.setMaxAge(MAX_AGE);
         source.registerCorsConfiguration("/**", config);
-
-        FilterRegistrationBean<org.springframework.web.filter.CorsFilter> bean =
-                new FilterRegistrationBean<>(new CorsFilter(source));
-
+        FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
         bean.setOrder(CORS_FILTER_ORDER);
         return bean;
     }

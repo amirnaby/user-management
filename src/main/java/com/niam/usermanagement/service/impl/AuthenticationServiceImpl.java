@@ -125,7 +125,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 userRepository.findByUsername(username).ifPresent(accountLockService::lock);
             }
 
-            // if ip crosses threshold now, optionally take action: here we just throw (could call a IP block action)
+            // if ip crosses threshold now, optionally take action: here we just throw (could call an IP block action)
             if (!ipStillAllowed) {
                 throw new IllegalStateException("Too many login attempts from your IP");
             }
