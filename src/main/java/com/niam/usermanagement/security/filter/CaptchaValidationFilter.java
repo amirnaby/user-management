@@ -32,6 +32,9 @@ public class CaptchaValidationFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private CaptchaProvider captchaProvider;
 
+    @Value("${app.captcha.enabled:false}")
+    private boolean captchaEnabled;
+
     @Value("${app.captcha.provider:LOCAL}")
     private String captchaProviderName;
 
@@ -49,8 +52,8 @@ public class CaptchaValidationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+        if (!captchaEnabled) return true;
         String path = request.getRequestURI();
-        // only validate for auth endpoints login/register
         return !(path.equals("/api/v1/auth/login") || path.equals("/api/v1/auth/register"));
     }
 

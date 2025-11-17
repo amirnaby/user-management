@@ -16,7 +16,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -44,9 +43,6 @@ public class AuthenticationController {
     private final UserRepository userRepository;
     private final AccountLockService accountLockService;
 
-    @Value("${app.captcha.enabled:false}")
-    private boolean captchaEnabled;
-
     /**
      * Register new user. Captcha validation is performed earlier in CaptchaValidationFilter.
      */
@@ -70,7 +66,6 @@ public class AuthenticationController {
      */
     @GetMapping(value = "/captcha", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CaptchaResponse> getCaptcha() {
-        if (!captchaEnabled) return ResponseEntity.badRequest().build();
         try {
             return ResponseEntity.ok(captchaService.generate());
         } catch (Exception ex) {
