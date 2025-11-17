@@ -2,12 +2,13 @@ package com.niam.usermanagement.model.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name = "um_permissions", uniqueConstraints = @UniqueConstraint(columnNames = "code"))
 public class Permission extends Auditable {

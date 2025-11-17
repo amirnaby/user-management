@@ -2,6 +2,7 @@ package com.niam.usermanagement.model.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
 
@@ -9,7 +10,7 @@ import java.time.Instant;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name = "um_refresh_token")
 public class RefreshToken extends Auditable {

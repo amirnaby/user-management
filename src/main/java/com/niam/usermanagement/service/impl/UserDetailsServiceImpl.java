@@ -1,5 +1,6 @@
 package com.niam.usermanagement.service.impl;
 
+import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.repository.UserRepository;
 import com.niam.usermanagement.service.JwtService;
 import com.niam.usermanagement.service.UserQueryService;
@@ -20,8 +21,7 @@ public class UserDetailsServiceImpl implements UserDetailsService, UserQueryServ
     private final JwtService jwtService;
 
     @Override
-    public UserDetails loadUserByUsername(String username)
-            throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
@@ -33,5 +33,11 @@ public class UserDetailsServiceImpl implements UserDetailsService, UserQueryServ
         HttpServletRequest request = attrs.getRequest();
         String token = jwtService.getJwtFromRequest(request);
         return jwtService.extractUserId(token);
+    }
+
+    @Override
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + userId));
     }
 }

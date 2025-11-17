@@ -6,7 +6,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.userdetails.UserDetails;
 
 public interface JwtService {
-    String extractUserName(String token);
+    String extractUsername(String token);
 
     Long extractUserId(String token);
 

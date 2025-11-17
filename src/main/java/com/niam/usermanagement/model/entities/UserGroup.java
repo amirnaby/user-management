@@ -2,6 +2,7 @@ package com.niam.usermanagement.model.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.Set;
 
@@ -9,7 +10,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name = "um_user_groups", uniqueConstraints = @UniqueConstraint(columnNames = "name"))
 public class UserGroup extends Auditable {

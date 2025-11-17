@@ -29,21 +29,16 @@ import java.util.function.Function;
 @RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
     private final TokenBlacklistService tokenBlacklistService;
-
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
-
     @Value("${application.security.jwt.expiration:900000}") // default 15 minutes
     private long jwtExpiration; // ms
-
     @Value("${application.security.jwt.cookie-name}")
     private String jwtCookieName;
 
-
     /* ---------------------- Extract Claims ---------------------- */
-
     @Override
-    public String extractUserName(String token) {
+    public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
@@ -59,9 +54,7 @@ public class JwtServiceImpl implements JwtService {
         }
     }
 
-
     /* ---------------------- Token Generation ---------------------- */
-
     @Override
     public String generateToken(User user) {
         return generateToken(user.getUsername(), user.getId());
@@ -78,7 +71,7 @@ public class JwtServiceImpl implements JwtService {
 
         return Jwts.builder()
                 .setSubject(username)
-                .setId(jti)                 // JTI برای blacklist
+                .setId(jti)                 // JTI for blacklist
                 .claim("uid", userId)       // userId safe bind
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(now + jwtExpiration))
@@ -88,13 +81,11 @@ public class JwtServiceImpl implements JwtService {
 
 
     /* ---------------------- Validity ---------------------- */
-
     @Override
     public boolean isTokenValid(String token, UserDetails userDetails) {
         if (token == null) return false;
 
-        String username = extractUserName(token);
-
+        String username = extractUsername(token);
         if (username == null || !username.equals(userDetails.getUsername()))
             return false;
 
@@ -121,7 +112,6 @@ public class JwtServiceImpl implements JwtService {
 
 
     /* ---------------------- Cookie Helpers ---------------------- */
-
     @Override
     public ResponseCookie generateJwtCookie(String jwt) {
         return ResponseCookie.from(jwtCookieName, jwt)
@@ -160,7 +150,6 @@ public class JwtServiceImpl implements JwtService {
 
 
     /* ---------------------- Claim Utilities ---------------------- */
-
     private <T> T extractClaim(String token, Function<Claims, T> fn) {
         return fn.apply(extractAllClaims(token));
     }
@@ -179,7 +168,6 @@ public class JwtServiceImpl implements JwtService {
 
 
     /* ---------------------- Blacklist ---------------------- */
-
     @Override
     public void blacklistToken(String token) {
         if (token == null) return;
