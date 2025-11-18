@@ -8,7 +8,7 @@ import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.repository.MenuRepository;
 import com.niam.usermanagement.service.JwtService;
 import com.niam.usermanagement.service.MenuService;
-import com.niam.usermanagement.service.UserQueryService;
+import com.niam.usermanagement.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MenuServiceImpl implements MenuService {
     private final MenuRepository menuRepository;
-    private final UserQueryService userQueryService;
+    private final UserService userService;
     private final JwtService jwtService;
 
     @Override
@@ -30,7 +30,7 @@ public class MenuServiceImpl implements MenuService {
         String token = jwtService.getJwtFromRequest(request);
         if (token == null) return List.of();
         String username = jwtService.extractUsername(token);
-        User user = (User) userQueryService.loadUserByUsername(username);
+        User user = (User) userService.loadUserByUsername(username);
         Set<String> userPermissions = getUserPermissions(user);
         return menuRepository.findAll().stream()
                 .filter(menu -> menu.getPermissions().stream()
@@ -38,13 +38,13 @@ public class MenuServiceImpl implements MenuService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Transactional("transactionManager")
     @Override
     public Menu createMenu(Menu menu) {
         return menuRepository.save(menu);
     }
 
-    @Transactional
+    @Transactional("transactionManager")
     @Override
     public Menu updateMenu(Long id, Menu updated) {
         Menu existing = getMenuById(id);
@@ -55,7 +55,7 @@ public class MenuServiceImpl implements MenuService {
         return menuRepository.save(existing);
     }
 
-    @Transactional
+    @Transactional("transactionManager")
     @Override
     public void deleteMenu(Long id) {
         Menu existing = getMenuById(id);

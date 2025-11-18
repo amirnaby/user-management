@@ -10,7 +10,7 @@ import java.time.temporal.ChronoUnit;
 
 @Service
 public class PasswordExpirationServiceImpl implements PasswordExpirationService {
-    @Value("${app.password.expiration.enabled:true}")
+    @Value("${app.password.expiration.enabled:false}")
     private boolean enabled;
 
     @Value("${app.password.expiration.days:90}")

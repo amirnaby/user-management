@@ -6,7 +6,6 @@ import com.niam.usermanagement.model.payload.request.RefreshTokenRequest;
 import com.niam.usermanagement.model.payload.response.RefreshTokenResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseCookie;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -17,7 +16,6 @@ public interface RefreshTokenService {
 
     Optional<RefreshToken> findByToken(String token);
 
-    @Transactional
     RefreshToken rotateRefreshToken(String oldToken);
 
     RefreshTokenResponse generateNewToken(RefreshTokenRequest request);

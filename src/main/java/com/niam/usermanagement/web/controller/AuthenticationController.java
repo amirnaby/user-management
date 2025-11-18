@@ -47,7 +47,7 @@ public class AuthenticationController {
      * Register new user. Captcha validation is performed earlier in CaptchaValidationFilter.
      */
     @PostMapping("/register")
-    public ResponseEntity<AuthenticationResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthenticationResponse> register(@Valid @RequestBody UserDTO request) {
         AuthenticationResponse resp = authenticationService.register(request);
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(resp.getAccessToken()).toString()).header(HttpHeaders.SET_COOKIE, refreshTokenService.generateRefreshTokenCookie(resp.getRefreshToken()).toString()).body(resp);
     }
@@ -58,7 +58,10 @@ public class AuthenticationController {
     @PostMapping("/login")
     public ResponseEntity<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request, HttpServletRequest servletRequest) {
         AuthenticationResponse resp = authenticationService.authenticate(request, servletRequest);
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(resp.getAccessToken()).toString()).header(HttpHeaders.SET_COOKIE, refreshTokenService.generateRefreshTokenCookie(resp.getRefreshToken()).toString()).body(resp);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(resp.getAccessToken()).toString())
+                .header(HttpHeaders.SET_COOKIE, refreshTokenService.generateRefreshTokenCookie(resp.getRefreshToken()).toString())
+                .body(resp);
     }
 
     /**

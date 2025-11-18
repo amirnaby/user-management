@@ -59,13 +59,15 @@ public class User extends Auditable implements UserDetails {
     @Column(nullable = false)
     private boolean isActive = true;
 
+    @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "um_user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "um_user_group_membership",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "group_id"))
@@ -78,7 +80,7 @@ public class User extends Auditable implements UserDetails {
     private Instant lockUntil;
 
     @Column
-    private Instant PasswordChangedAt;
+    private Instant passwordChangedAt;
 
     @Column
     private boolean mustChangePassword;

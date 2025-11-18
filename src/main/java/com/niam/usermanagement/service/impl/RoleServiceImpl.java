@@ -4,7 +4,7 @@ import com.niam.usermanagement.model.entities.Permission;
 import com.niam.usermanagement.model.entities.Role;
 import com.niam.usermanagement.model.repository.PermissionRepository;
 import com.niam.usermanagement.model.repository.RoleRepository;
-import com.niam.usermanagement.service.PermissionCacheService;
+import com.niam.usermanagement.service.PermissionService;
 import com.niam.usermanagement.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 public class RoleServiceImpl implements RoleService {
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
-    private final PermissionCacheService permissionCacheService;
+    private final PermissionService permissionService;
 
     @Override
     public Role createRole(String name, String desc) {
@@ -23,12 +23,12 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public Role assignPermission(Long roleId, Long permissionId) {
-        Role r = roleRepository.findById(roleId).orElseThrow();
-        Permission p = permissionRepository.findById(permissionId).orElseThrow();
+    public Role assignPermission(String roleName, String permissionCode) {
+        Role r = roleRepository.findByName(roleName).orElseThrow();
+        Permission p = permissionRepository.findByCode(permissionCode).orElseThrow();
         r.getPermissions().add(p);
         Role saved = roleRepository.save(r);
-        permissionCacheService.invalidateAll();
+        permissionService.invalidateAll();
         return saved;
     }
 }

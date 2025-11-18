@@ -1,12 +1,13 @@
 package com.niam.usermanagement.service.impl;
 
 import com.niam.common.exception.IllegalArgumentException;
+import com.niam.common.utils.GenericDtoMapper;
 import com.niam.usermanagement.model.entities.PasswordHistory;
 import com.niam.usermanagement.model.entities.Role;
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.payload.request.AuthenticationRequest;
 import com.niam.usermanagement.model.payload.request.ChangePasswordRequest;
-import com.niam.usermanagement.model.payload.request.RegisterRequest;
+import com.niam.usermanagement.model.payload.request.UserDTO;
 import com.niam.usermanagement.model.payload.request.ResetPasswordRequest;
 import com.niam.usermanagement.model.payload.response.AuthenticationResponse;
 import com.niam.usermanagement.model.repository.PasswordHistoryRepository;
@@ -47,7 +48,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthUtils authUtils;
 
     @Override
-    public AuthenticationResponse register(RegisterRequest request) {
+    public AuthenticationResponse register(UserDTO request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
         }
@@ -58,25 +59,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new IllegalArgumentException("Mobile already exists");
         }
 
-        Role role = null;
-        if (request.getRoleName() != null && !request.getRoleName().isBlank()) {
-            role = roleRepository.findByName(request.getRoleName())
-                    .orElseThrow(() -> new IllegalArgumentException("Role not found: " + request.getRoleName()));
-        }
-
-        User user = User.builder()
-                .firstname(request.getFirstname())
-                .lastname(request.getLastname())
-                .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .email(request.getEmail())
-                .mobile(request.getMobile())
-                .build();
-
-        if (role != null) {
-            user.getRoles().add(role);
-        }
-
+        Role defaultRole = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new IllegalStateException("Default role not found"));
+        User user = new User();
+        GenericDtoMapper.copyNonNullProperties(request, user, "roleName");
+        user.getRoles().add(defaultRole);
+        user.setMustChangePassword(false);
+        user.setPasswordChangedAt(Instant.now());
         user = userRepository.save(user);
 
         var jwt = jwtService.generateToken(user);

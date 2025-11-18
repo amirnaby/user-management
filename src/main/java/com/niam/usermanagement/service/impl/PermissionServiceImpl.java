@@ -1,8 +1,9 @@
 package com.niam.usermanagement.service.impl;
 
+import com.niam.common.utils.GenericDtoMapper;
 import com.niam.usermanagement.model.entities.Permission;
 import com.niam.usermanagement.model.repository.PermissionRepository;
-import com.niam.usermanagement.service.PermissionCacheService;
+import com.niam.usermanagement.service.PermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Service
 @RequiredArgsConstructor
-public class PermissionCacheServiceImpl implements PermissionCacheService {
+public class PermissionServiceImpl implements PermissionService {
     private final PermissionRepository permissionRepository;
     private final Map<Long, Entry> cache = new ConcurrentHashMap<>();
     @Value("${app.permission.cache.ttl.seconds:300}")
@@ -46,5 +47,12 @@ public class PermissionCacheServiceImpl implements PermissionCacheService {
     }
 
     private record Entry(List<Permission> perms, Instant expiresAt) {
+    }
+
+    @Override
+    public Permission create(Permission dto) {
+        Permission p = new Permission();
+        GenericDtoMapper.copyNonNullProperties(dto, p);
+        return permissionRepository.save(p);
     }
 }

@@ -1,5 +1,6 @@
 package com.niam.usermanagement.model.payload.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -7,11 +8,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RegisterRequest {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class UserDTO {
     @NotBlank(message = "firstname is required")
     private String firstname;
     @NotBlank(message = "lastname is required")
@@ -31,5 +36,5 @@ public class RegisterRequest {
      * For safety in production, registration with privilege roles should be prevented,
      * or system should ignore roleName and always assign default.
      */
-    private String roleName;
+    private Set<String> roleNames = new HashSet<>();
 }

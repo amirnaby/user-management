@@ -79,7 +79,6 @@ public class JwtServiceImpl implements JwtService {
                 .compact();
     }
 
-
     /* ---------------------- Validity ---------------------- */
     @Override
     public boolean isTokenValid(String token, UserDetails userDetails) {
@@ -109,7 +108,6 @@ public class JwtServiceImpl implements JwtService {
     private boolean isTokenExpired(String token) {
         return extractClaim(token, Claims::getExpiration).before(new Date());
     }
-
 
     /* ---------------------- Cookie Helpers ---------------------- */
     @Override
@@ -148,7 +146,6 @@ public class JwtServiceImpl implements JwtService {
                 .build();
     }
 
-
     /* ---------------------- Claim Utilities ---------------------- */
     private <T> T extractClaim(String token, Function<Claims, T> fn) {
         return fn.apply(extractAllClaims(token));
@@ -165,7 +162,6 @@ public class JwtServiceImpl implements JwtService {
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
     }
-
 
     /* ---------------------- Blacklist ---------------------- */
     @Override

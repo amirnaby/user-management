@@ -2,12 +2,10 @@ package com.niam.usermanagement.model.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Getter
@@ -26,8 +24,9 @@ public class Menu extends Auditable {
     private String icon;
     @Column(nullable = false, unique = true)
     private String route;
+    @Builder.Default
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "um_menu_permissions", joinColumns = @JoinColumn(name = "menu_id"))
     @Column(name = "permission")
-    private Set<String> permissions;
+    private Set<String> permissions = new HashSet<>();
 }

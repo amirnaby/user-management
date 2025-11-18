@@ -11,12 +11,12 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
-@Entity
-@Table(name = "um_device_sessions")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity
+@Table(name = "um_device_sessions")
 public class DeviceSession {
     @Id
     @GeneratedValue

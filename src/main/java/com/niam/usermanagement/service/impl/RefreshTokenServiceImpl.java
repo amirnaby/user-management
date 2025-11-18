@@ -43,7 +43,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private String refreshTokenName;
 
     @Override
-    @Transactional
+    @Transactional("transactionManager")
     public RefreshToken createRefreshToken(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         String tokenValue = Base64.getUrlEncoder().withoutPadding()
@@ -63,7 +63,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     @Override
-    @Transactional
+    @Transactional("transactionManager")
     public void verifyExpiration(RefreshToken token) {
         if (token == null) {
             log.error("Token is null");
@@ -79,7 +79,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
      * Rotate refresh token: oldToken -> newToken
      * If oldToken is revoked -> replay attack -> revoke all user's tokens and throw
      */
-    @Transactional
+    @Transactional("transactionManager")
     @Override
     public RefreshToken rotateRefreshToken(String oldToken) {
         RefreshToken existing = refreshTokenRepository.findByToken(oldToken)
@@ -104,7 +104,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     @Override
-    @Transactional
+    @Transactional("transactionManager")
     public RefreshTokenResponse generateNewToken(RefreshTokenRequest request) {
         // rotate and generate access token
         RefreshToken newRefresh = rotateRefreshToken(request.getRefreshToken());
@@ -140,13 +140,13 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     @Override
-    @Transactional
+    @Transactional("transactionManager")
     public void deleteByToken(String token) {
         refreshTokenRepository.findByToken(token).ifPresent(refreshTokenRepository::delete);
     }
 
     @Override
-    @Transactional
+    @Transactional("transactionManager")
     public void revokeTokensByUser(User user) {
         List<RefreshToken> list = refreshTokenRepository.findAllByUser(user);
         if (list != null && !list.isEmpty()) {
