@@ -1,8 +1,8 @@
 package com.niam.usermanagement.service.captcha;
 
-import com.niam.usermanagement.model.dto.CaptchaGenerateRequest;
-import com.niam.usermanagement.model.dto.CaptchaResponse;
-import com.niam.usermanagement.model.dto.CaptchaValidateRequest;
+import com.niam.usermanagement.model.payload.request.CaptchaGenerateRequest;
+import com.niam.usermanagement.model.payload.response.CaptchaResponse;
+import com.niam.usermanagement.model.payload.request.CaptchaValidateRequest;
 import com.niam.usermanagement.model.enums.CaptchaProviderType;
 import com.niam.usermanagement.service.captcha.provider.CaptchaProvider;
 import com.niam.usermanagement.service.captcha.provider.CaptchaProviderRegistry;

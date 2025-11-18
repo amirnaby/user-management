@@ -1,4 +1,4 @@
-package com.niam.usermanagement.web.controller;
+package com.niam.usermanagement.controller;
 
 import com.niam.usermanagement.model.entities.Role;
 import com.niam.usermanagement.service.RoleService;
@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Role and permission management.
@@ -25,9 +27,18 @@ public class RoleController {
         return ResponseEntity.ok(r);
     }
 
-    @PostMapping("/{roleName}/permissions/{permissionCode}")
+    @PutMapping("/{roleName}/permissions")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Role> assignPerm(@PathVariable String roleName, @PathVariable String permissionCode) {
-        return ResponseEntity.ok(roleService.assignPermission(roleName, permissionCode));
+    public ResponseEntity<Role> assignPermissions(
+            @PathVariable String roleName,
+            @RequestBody List<String> permissionCodes) {
+        return ResponseEntity.ok(roleService.assignPermissions(roleName, permissionCodes));
+    }
+
+    @DeleteMapping("/roles/{roleName}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteRole(@PathVariable String roleName) {
+        roleService.deleteRole(roleName);
+        return ResponseEntity.noContent().build();
     }
 }

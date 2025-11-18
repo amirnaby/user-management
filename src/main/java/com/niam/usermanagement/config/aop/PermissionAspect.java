@@ -5,21 +5,29 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
 
 @Aspect
 @Component
 public class PermissionAspect {
+
     @Before("@annotation(hasPermission)")
     public void checkPermission(HasPermission hasPermission) {
-        String required = hasPermission.value();
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean allowed = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals(required));
+        var userPerms = auth.getAuthorities();
+
+        String[] required = Arrays.stream(hasPermission.value()).map(Object::toString).toArray(String[]::new);
+
+        boolean allowed = userPerms.stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(Arrays.asList(required)::contains);
 
         if (!allowed) {
-            throw new AccessDeniedException("Permission denied: " + required);
+            throw new AccessDeniedException("Permission denied. Required: " + Arrays.toString(required));
         }
     }
 }

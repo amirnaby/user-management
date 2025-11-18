@@ -5,7 +5,9 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -27,4 +29,12 @@ public class UserGroup extends Auditable {
             joinColumns = @JoinColumn(name = "group_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
+
+    public Set<Permission> getAuthorities() {
+        if (roles == null) return Set.of();
+        return roles.stream()
+                .filter(Objects::nonNull)
+                .flatMap(role -> role.getPermissions().stream())
+                .collect(Collectors.toSet());
+    }
 }

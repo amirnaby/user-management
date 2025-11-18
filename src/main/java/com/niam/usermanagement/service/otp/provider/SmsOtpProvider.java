@@ -1,6 +1,6 @@
 package com.niam.usermanagement.service.otp.provider;
 
-import com.niam.usermanagement.model.dto.OtpRequest;
+import com.niam.usermanagement.model.payload.request.OtpRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

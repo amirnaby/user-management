@@ -1,4 +1,4 @@
-package com.niam.usermanagement.model.dto;
+package com.niam.usermanagement.model.payload.request;
 
 /**
  * Data object passed to OTP providers.

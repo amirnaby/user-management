@@ -5,15 +5,13 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.Set;
 
-import static com.niam.usermanagement.model.enums.PRIVILEGE.*;
-
 @RequiredArgsConstructor
 public enum ROLE {
     ADMIN(
-            Set.of(READ_PRIVILEGE, WRITE_PRIVILEGE, UPDATE_PRIVILEGE, DELETE_PRIVILEGE)
+            Set.of(PRIVILEGE.values())
     ),
     USER(
-            Set.of(READ_PRIVILEGE, WRITE_PRIVILEGE)
+            Set.of()
     );
 
     @Getter

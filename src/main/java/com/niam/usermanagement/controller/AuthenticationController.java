@@ -1,6 +1,6 @@
-package com.niam.usermanagement.web.controller;
+package com.niam.usermanagement.controller;
 
-import com.niam.usermanagement.model.dto.CaptchaResponse;
+import com.niam.usermanagement.model.payload.response.CaptchaResponse;
 import com.niam.usermanagement.model.entities.Permission;
 import com.niam.usermanagement.model.entities.RefreshToken;
 import com.niam.usermanagement.model.entities.User;

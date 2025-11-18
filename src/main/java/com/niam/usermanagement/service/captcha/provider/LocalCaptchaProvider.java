@@ -2,9 +2,9 @@ package com.niam.usermanagement.service.captcha.provider;
 
 import com.google.code.kaptcha.impl.DefaultKaptcha;
 import com.google.code.kaptcha.util.Config;
-import com.niam.usermanagement.model.dto.CaptchaGenerateRequest;
-import com.niam.usermanagement.model.dto.CaptchaResponse;
-import com.niam.usermanagement.model.dto.CaptchaValidateRequest;
+import com.niam.usermanagement.model.payload.request.CaptchaGenerateRequest;
+import com.niam.usermanagement.model.payload.response.CaptchaResponse;
+import com.niam.usermanagement.model.payload.request.CaptchaValidateRequest;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

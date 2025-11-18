@@ -63,6 +63,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .orElseThrow(() -> new IllegalStateException("Default role not found"));
         User user = new User();
         GenericDtoMapper.copyNonNullProperties(request, user, "roleName");
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.getRoles().add(defaultRole);
         user.setMustChangePassword(false);
         user.setPasswordChangedAt(Instant.now());
@@ -126,6 +127,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid username or password."));
+
+        if (!user.isEnabled()) {
+            throw new IllegalStateException("Account is disabled");
+        }
 
         accountLockService.unlockIfExpired(user);
         if (user.isAccountLocked()) {

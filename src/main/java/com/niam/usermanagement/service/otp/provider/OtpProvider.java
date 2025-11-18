@@ -1,6 +1,6 @@
 package com.niam.usermanagement.service.otp.provider;
 
-import com.niam.usermanagement.model.dto.OtpRequest;
+import com.niam.usermanagement.model.payload.request.OtpRequest;
 
 /**
  * Generic OTP provider interface used for sending OTP codes.

@@ -12,4 +12,6 @@ public interface PermissionService {
     void invalidateAll();
 
     Permission create(Permission dto);
+
+    void deletePermission(String permissionCode);
 }

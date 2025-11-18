@@ -1,4 +1,4 @@
-package com.niam.usermanagement.web.controller;
+package com.niam.usermanagement.controller;
 
 import com.niam.usermanagement.model.entities.Menu;
 import com.niam.usermanagement.service.MenuService;

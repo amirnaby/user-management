@@ -1,12 +1,16 @@
 package com.niam.usermanagement.service.impl;
 
+import com.niam.common.exception.EntityNotFoundException;
 import com.niam.common.utils.GenericDtoMapper;
 import com.niam.usermanagement.model.entities.Permission;
 import com.niam.usermanagement.model.repository.PermissionRepository;
+import com.niam.usermanagement.model.repository.RoleRepository;
+import com.niam.usermanagement.model.repository.UserGroupRepository;
 import com.niam.usermanagement.service.PermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -21,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class PermissionServiceImpl implements PermissionService {
     private final PermissionRepository permissionRepository;
+    private final RoleRepository roleRepository;
     private final Map<Long, Entry> cache = new ConcurrentHashMap<>();
     @Value("${app.permission.cache.ttl.seconds:300}")
     private long ttlSeconds;
@@ -55,4 +60,21 @@ public class PermissionServiceImpl implements PermissionService {
         GenericDtoMapper.copyNonNullProperties(dto, p);
         return permissionRepository.save(p);
     }
+
+    @Transactional("transactionManager")
+    @Override
+    public void deletePermission(String permissionCode) {
+        Permission permission = permissionRepository.findByCode(permissionCode)
+                .orElseThrow(() -> new EntityNotFoundException("Permission not found: " + permissionCode));
+
+        roleRepository.findAll().forEach(role -> {
+            if (role.getPermissions().remove(permission)) {
+                roleRepository.save(role);
+            }
+        });
+
+        invalidateAll();
+        permissionRepository.delete(permission);
+    }
+
 }

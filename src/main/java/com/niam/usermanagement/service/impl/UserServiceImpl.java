@@ -64,19 +64,19 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Transactional("transactionManager")
     @Override
-    public void createUser(UserDTO request) {
+    public User createUser(UserDTO request) {
         User user = new User();
         GenericDtoMapper.copyNonNullProperties(request, user, "roleName");
         Role role = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new IllegalArgumentException("Role not found"));
         user.getRoles().add(role);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        userRepository.save(user);
+        return userRepository.save(user);
     }
 
     @Transactional("transactionManager")
     @Override
-    public void updateUser(String username, UserDTO request) {
+    public User updateUser(String username, UserDTO request) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         GenericDtoMapper.copyNonNullProperties(request, user, "roleNames");
@@ -87,7 +87,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
                     .collect(Collectors.toSet());
             user.setRoles(newRoles);
         }
-        userRepository.save(user);
+        return userRepository.save(user);
     }
 
     @Transactional("transactionManager")
@@ -101,9 +101,9 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Transactional("transactionManager")
     @Override
-    public void updateProfile(UserDTO request) {
+    public User updateProfile(UserDTO request) {
         User currentUser = authUtils.getCurrentUser();
-        GenericDtoMapper.copyNonNullProperties(request, currentUser);
-        userRepository.save(currentUser);
+        GenericDtoMapper.copyNonNullProperties(request, currentUser, "password");
+        return userRepository.save(currentUser);
     }
 }

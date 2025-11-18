@@ -4,10 +4,8 @@ import lombok.Getter;
 
 @Getter
 public enum PRIVILEGE {
-    READ_PRIVILEGE("READ_PRIVILEGE"),
-    WRITE_PRIVILEGE("WRITE_PRIVILEGE"),
-    UPDATE_PRIVILEGE("UPDATE_PRIVILEGE"),
-    DELETE_PRIVILEGE("DELETE_PRIVILEGE");
+    USER_MANAGE("USER_MANAGE"),
+    USER_READ("USER_READ");
 
     private final String code;
 

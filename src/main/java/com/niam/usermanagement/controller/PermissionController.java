@@ -1,4 +1,4 @@
-package com.niam.usermanagement.web.controller;
+package com.niam.usermanagement.controller;
 
 import com.niam.usermanagement.model.entities.Permission;
 import com.niam.usermanagement.service.PermissionService;
@@ -36,4 +36,12 @@ public class PermissionController {
         Permission p = permissionService.create(dto);
         return ResponseEntity.ok(p);
     }
+
+    @DeleteMapping("/permissions/{permissionCode}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deletePermission(@PathVariable String permissionCode) {
+        permissionService.deletePermission(permissionCode);
+        return ResponseEntity.noContent().build();
+    }
+
 }

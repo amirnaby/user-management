@@ -1,4 +1,4 @@
-package com.niam.usermanagement.web.controller;
+package com.niam.usermanagement.controller;
 
 import com.niam.usermanagement.model.payload.request.UserDTO;
 import com.niam.usermanagement.service.UserService;
@@ -19,7 +19,6 @@ public class UserController {
 
     @PutMapping
     public ResponseEntity<?> updateProfile(@RequestBody UserDTO request) {
-        userService.updateProfile(request);
-        return ResponseEntity.ok("Profile updated successfully");
+        return ResponseEntity.ok(userService.updateProfile(request));
     }
 }

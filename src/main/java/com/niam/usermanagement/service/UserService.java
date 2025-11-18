@@ -18,14 +18,14 @@ public interface UserService {
     UserDetails loadUserByUsername(String username);
 
     @Transactional("transactionManager")
-    void createUser(UserDTO request);
+    User createUser(UserDTO request);
 
     @Transactional("transactionManager")
-    void updateUser(String username, UserDTO request);
+    User updateUser(String username, UserDTO request);
 
     @Transactional("transactionManager")
     void deleteUser(String username);
 
     @Transactional("transactionManager")
-    void updateProfile(UserDTO request);
+    User updateProfile(UserDTO request);
 }

@@ -83,7 +83,7 @@ public class StartupDataLoader implements ApplicationRunner {
                     .password(passwordEncoder.encode("Amir@Naby123"))
                     .email("naby1371@gmail.com")
                     .mobile("09369052885")
-                    .isActive(true)
+                    .enabled(true)
                     .roles(Set.of(adminRole))
                     .mustChangePassword(false)
                     .passwordChangedAt(Instant.now())

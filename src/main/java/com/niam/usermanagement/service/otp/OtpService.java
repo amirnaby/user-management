@@ -1,6 +1,6 @@
 package com.niam.usermanagement.service.otp;
 
-import com.niam.usermanagement.model.dto.OtpRequest;
+import com.niam.usermanagement.model.payload.request.OtpRequest;
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.enums.OtpProviderType;
 import com.niam.usermanagement.model.repository.UserRepository;

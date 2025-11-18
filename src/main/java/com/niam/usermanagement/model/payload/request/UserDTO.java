@@ -1,6 +1,7 @@
 package com.niam.usermanagement.model.payload.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -23,6 +24,7 @@ public class UserDTO {
     private String lastname;
     @NotBlank(message = "username is required")
     private String username;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotBlank(message = "password is required")
     private String password;
     @NotBlank(message = "email is required")

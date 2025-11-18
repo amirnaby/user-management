@@ -2,7 +2,7 @@ package com.niam.usermanagement.security.filter;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.niam.usermanagement.model.dto.CaptchaValidateRequest;
+import com.niam.usermanagement.model.payload.request.CaptchaValidateRequest;
 import com.niam.usermanagement.model.enums.CaptchaProviderType;
 import com.niam.usermanagement.service.captcha.provider.CaptchaProvider;
 import com.niam.usermanagement.service.captcha.provider.CaptchaProviderRegistry;

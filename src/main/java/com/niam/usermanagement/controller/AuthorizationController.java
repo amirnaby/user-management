@@ -1,4 +1,4 @@
-package com.niam.usermanagement.web.controller;
+package com.niam.usermanagement.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

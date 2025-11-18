@@ -1,6 +1,7 @@
 package com.niam.usermanagement.model.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -44,6 +45,7 @@ public class User extends Auditable implements UserDetails {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotBlank
     private String password;
 
@@ -57,7 +59,7 @@ public class User extends Auditable implements UserDetails {
     private String mobile;
 
     @Column(nullable = false)
-    private boolean isActive = true;
+    private boolean enabled = true;
 
     @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
@@ -76,14 +78,21 @@ public class User extends Auditable implements UserDetails {
     @Column(nullable = false)
     private boolean accountLocked = false;
 
+
     @Column
     private Instant lockUntil;
+
+    @Column(nullable = false)
+    private boolean accountNonLocked = false;
 
     @Column
     private Instant passwordChangedAt;
 
     @Column
     private boolean mustChangePassword;
+
+    @Column(nullable = false)
+    private boolean accountNonExpired = false;
 
     @Column
     private Integer otpSendCount = 0;
@@ -135,25 +144,5 @@ public class User extends Auditable implements UserDetails {
     @Override
     public String getUsername() {
         return username;
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return isActive;
     }
 }
