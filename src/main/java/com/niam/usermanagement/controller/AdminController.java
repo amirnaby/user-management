@@ -1,5 +1,7 @@
 package com.niam.usermanagement.controller;
 
+import com.niam.common.model.response.ServiceResponse;
+import com.niam.common.utils.ResponseEntityUtil;
 import com.niam.usermanagement.annotation.HasPermission;
 import com.niam.usermanagement.model.enums.PRIVILEGE;
 import com.niam.usermanagement.model.payload.request.UserDTO;
@@ -16,35 +18,36 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AdminController {
     private final UserService userService;
+    private final ResponseEntityUtil responseEntityUtil;
 
     @PostMapping("/users")
     @HasPermission(PRIVILEGE.USER_MANAGE)
-    public ResponseEntity<?> createUserByAdmin(@Valid @RequestBody UserDTO request) {
-        return ResponseEntity.ok(userService.createUser(request));
+    public ResponseEntity<ServiceResponse> createUserByAdmin(@Valid @RequestBody UserDTO request) {
+        return responseEntityUtil.ok(userService.createUser(request));
     }
 
     @PutMapping("/users/{username}")
     @HasPermission(PRIVILEGE.USER_MANAGE)
-    public ResponseEntity<?> updateUser(@PathVariable String username, @RequestBody UserDTO request) {
-        return ResponseEntity.ok(userService.updateUser(username, request));
+    public ResponseEntity<ServiceResponse> updateUser(@PathVariable String username, @RequestBody UserDTO request) {
+        return responseEntityUtil.ok(userService.updateUser(username, request));
     }
 
     @DeleteMapping("/users/{username}")
     @HasPermission(PRIVILEGE.USER_MANAGE)
-    public ResponseEntity<?> deleteUser(@PathVariable String username) {
+    public ResponseEntity<ServiceResponse> deleteUser(@PathVariable String username) {
         userService.deleteUser(username);
-        return ResponseEntity.ok("User deleted successfully");
+        return responseEntityUtil.ok("User deleted successfully");
     }
 
     @GetMapping("/users/{username}")
     @HasPermission({PRIVILEGE.USER_MANAGE, PRIVILEGE.USER_READ})
-    public ResponseEntity<?> getUser(@PathVariable String username) {
-        return ResponseEntity.ok(userService.loadUserByUsername(username));
+    public ResponseEntity<ServiceResponse> getUser(@PathVariable String username) {
+        return responseEntityUtil.ok(userService.loadUserByUsername(username));
     }
 
     @GetMapping("/users")
     @HasPermission({PRIVILEGE.USER_MANAGE, PRIVILEGE.USER_READ})
-    public ResponseEntity<?> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<ServiceResponse> getAllUsers() {
+        return responseEntityUtil.ok(userService.getAllUsers());
     }
 }

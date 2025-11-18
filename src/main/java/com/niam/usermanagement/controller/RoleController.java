@@ -1,5 +1,7 @@
 package com.niam.usermanagement.controller;
 
+import com.niam.common.model.response.ServiceResponse;
+import com.niam.common.utils.ResponseEntityUtil;
 import com.niam.usermanagement.model.entities.Role;
 import com.niam.usermanagement.service.RoleService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,26 +21,27 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RoleController {
     private final RoleService roleService;
+    private final ResponseEntityUtil responseEntityUtil;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Role> create(@RequestBody Role dto) {
+    public ResponseEntity<ServiceResponse> create(@RequestBody Role dto) {
         Role r = roleService.createRole(dto.getName(), dto.getDescription());
-        return ResponseEntity.ok(r);
+        return responseEntityUtil.ok(r);
     }
 
     @PutMapping("/{roleName}/permissions")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Role> assignPermissions(
+    public ResponseEntity<ServiceResponse> assignPermissions(
             @PathVariable String roleName,
             @RequestBody List<String> permissionCodes) {
-        return ResponseEntity.ok(roleService.assignPermissions(roleName, permissionCodes));
+        return responseEntityUtil.ok(roleService.assignPermissions(roleName, permissionCodes));
     }
 
     @DeleteMapping("/roles/{roleName}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteRole(@PathVariable String roleName) {
+    public ResponseEntity<ServiceResponse> deleteRole(@PathVariable String roleName) {
         roleService.deleteRole(roleName);
-        return ResponseEntity.noContent().build();
+        return responseEntityUtil.ok("Role has been deleted");
     }
 }

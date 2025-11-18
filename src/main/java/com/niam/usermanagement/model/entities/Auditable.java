@@ -26,7 +26,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @EntityListeners(AuditingEntityListener.class)
-public class Auditable implements Serializable {
+public abstract class Auditable implements Serializable {
     @CreatedDate
     @Column(updatable = false, nullable = false)
     @JsonDeserialize(using = CustomLocalDateTimeDeserializer.class)
@@ -37,4 +37,6 @@ public class Auditable implements Serializable {
     @JsonDeserialize(using = CustomLocalDateTimeDeserializer.class)
     @JsonSerialize(using = CustomLocalDateTimeSerializer.class)
     private LocalDateTime updatedAt;
+    private String createdBy;
+    private String updatedBy;
 }

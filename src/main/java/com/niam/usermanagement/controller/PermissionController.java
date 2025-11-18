@@ -1,5 +1,7 @@
 package com.niam.usermanagement.controller;
 
+import com.niam.common.model.response.ServiceResponse;
+import com.niam.common.utils.ResponseEntityUtil;
 import com.niam.usermanagement.model.entities.Permission;
 import com.niam.usermanagement.service.PermissionService;
 import com.niam.usermanagement.service.UserService;
@@ -19,29 +21,30 @@ import java.util.List;
 public class PermissionController {
     private final PermissionService permissionService;
     private final UserService userService;
+    private final ResponseEntityUtil responseEntityUtil;
 
     /**
      * Returns permissions for the current authenticated user.
      */
     @GetMapping
-    public ResponseEntity<List<Permission>> getPermissions(Authentication authentication) {
+    public ResponseEntity<ServiceResponse> getPermissions(Authentication authentication) {
         Long userId = userService.getCurrentUserId(authentication);
         List<Permission> perms = permissionService.getPermissionsForUser(userId);
-        return ResponseEntity.ok(perms);
+        return responseEntityUtil.ok(perms);
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Permission> create(@RequestBody Permission dto) {
+    public ResponseEntity<ServiceResponse> create(@RequestBody Permission dto) {
         Permission p = permissionService.create(dto);
-        return ResponseEntity.ok(p);
+        return responseEntityUtil.ok(p);
     }
 
     @DeleteMapping("/permissions/{permissionCode}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deletePermission(@PathVariable String permissionCode) {
+    public ResponseEntity<ServiceResponse> deletePermission(@PathVariable String permissionCode) {
         permissionService.deletePermission(permissionCode);
-        return ResponseEntity.noContent().build();
+        return responseEntityUtil.ok("Permission has been deleted!");
     }
 
 }

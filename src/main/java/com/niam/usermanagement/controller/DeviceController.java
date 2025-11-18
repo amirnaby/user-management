@@ -1,5 +1,7 @@
 package com.niam.usermanagement.controller;
 
+import com.niam.common.model.response.ServiceResponse;
+import com.niam.common.utils.ResponseEntityUtil;
 import com.niam.usermanagement.service.DeviceSessionService;
 import com.niam.usermanagement.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,19 +20,20 @@ import java.util.Map;
 public class DeviceController {
     private final DeviceSessionService deviceService;
     private final JwtService jwtService;
+    private final ResponseEntityUtil responseEntityUtil;
 
     @GetMapping
-    public ResponseEntity<?> list(HttpServletRequest request) {
+    public ResponseEntity<ServiceResponse> list(HttpServletRequest request) {
         String token = jwtService.getJwtFromRequest(request);
         Long userId = jwtService.extractUserId(token);
-        return ResponseEntity.ok(deviceService.listSessions(userId));
+        return responseEntityUtil.ok(deviceService.listSessions(userId));
     }
 
     @PostMapping("/revoke/{id}")
-    public ResponseEntity<?> revoke(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<ServiceResponse> revoke(@PathVariable Long id, HttpServletRequest request) {
         String token = jwtService.getJwtFromRequest(request);
         Long userId = jwtService.extractUserId(token);
         deviceService.revokeSessionForUser(id, userId);
-        return ResponseEntity.ok(Map.of("message", "revoked"));
+        return responseEntityUtil.ok(Map.of("message", "revoked"));
     }
 }

@@ -1,6 +1,8 @@
 package com.niam.usermanagement.controller;
 
-import com.niam.usermanagement.model.payload.response.CaptchaResponse;
+import com.niam.common.exception.BusinessException;
+import com.niam.common.model.response.ServiceResponse;
+import com.niam.common.utils.ResponseEntityUtil;
 import com.niam.usermanagement.model.entities.Permission;
 import com.niam.usermanagement.model.entities.RefreshToken;
 import com.niam.usermanagement.model.entities.User;
@@ -42,37 +44,41 @@ public class AuthenticationController {
     private final OtpService otpService;
     private final UserRepository userRepository;
     private final AccountLockService accountLockService;
+    private final ResponseEntityUtil responseEntityUtil;
 
     /**
      * Register new user. Captcha validation is performed earlier in CaptchaValidationFilter.
      */
     @PostMapping("/register")
-    public ResponseEntity<AuthenticationResponse> register(@Valid @RequestBody UserDTO request) {
+    public ResponseEntity<ServiceResponse> register(@Valid @RequestBody UserDTO request) {
         AuthenticationResponse resp = authenticationService.register(request);
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(resp.getAccessToken()).toString()).header(HttpHeaders.SET_COOKIE, refreshTokenService.generateRefreshTokenCookie(resp.getRefreshToken()).toString()).body(resp);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(resp.getAccessToken()).toString());
+        headers.add(HttpHeaders.SET_COOKIE, refreshTokenService.generateRefreshTokenCookie(resp.getRefreshToken()).toString());
+        return responseEntityUtil.ok(resp, headers);
     }
 
     /**
      * Username/password login. Captcha and rate-limit handled by filters.
      */
     @PostMapping("/login")
-    public ResponseEntity<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request, HttpServletRequest servletRequest) {
+    public ResponseEntity<ServiceResponse> authenticate(@RequestBody AuthenticationRequest request, HttpServletRequest servletRequest) {
         AuthenticationResponse resp = authenticationService.authenticate(request, servletRequest);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(resp.getAccessToken()).toString())
-                .header(HttpHeaders.SET_COOKIE, refreshTokenService.generateRefreshTokenCookie(resp.getRefreshToken()).toString())
-                .body(resp);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(resp.getAccessToken()).toString());
+        headers.add(HttpHeaders.SET_COOKIE, refreshTokenService.generateRefreshTokenCookie(resp.getRefreshToken()).toString());
+        return responseEntityUtil.ok(resp, headers);
     }
 
     /**
      * Fetch a new captcha challenge.
      */
     @GetMapping(value = "/captcha", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CaptchaResponse> getCaptcha() {
+    public ResponseEntity<ServiceResponse> getCaptcha() {
         try {
-            return ResponseEntity.ok(captchaService.generate());
+            return responseEntityUtil.ok(captchaService.generate());
         } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
+            throw new BusinessException(ex.getMessage());
         }
     }
 
@@ -80,25 +86,27 @@ public class AuthenticationController {
      * Refresh token using request body.
      */
     @PostMapping("/refresh-token")
-    public ResponseEntity<RefreshTokenResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
-        return ResponseEntity.ok(refreshTokenService.generateNewToken(request));
+    public ResponseEntity<ServiceResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
+        return responseEntityUtil.ok(refreshTokenService.generateNewToken(request));
     }
 
     /**
      * Refresh token using cookie.
      */
     @PostMapping("/refresh-token-cookie")
-    public ResponseEntity<Void> refreshTokenCookie(HttpServletRequest request) {
+    public ResponseEntity<ServiceResponse> refreshTokenCookie(HttpServletRequest request) {
         String refreshToken = refreshTokenService.getRefreshTokenFromCookies(request);
         RefreshTokenResponse response = refreshTokenService.generateNewToken(new RefreshTokenRequest(refreshToken));
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(response.getAccessToken()).toString()).build();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(response.getAccessToken()).toString());
+        return responseEntityUtil.ok(response, headers);
     }
 
     /**
      * Logout: blacklist access token + delete refresh token + clear cookies.
      */
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<ServiceResponse> logout(HttpServletRequest request, HttpServletResponse response) {
         String accessToken = jwtService.getJwtFromRequest(request);
         if (accessToken != null) tokenBlacklistService.blacklistToken(accessToken);
 
@@ -109,16 +117,16 @@ public class AuthenticationController {
 
         response.addHeader(HttpHeaders.SET_COOKIE, jwtService.getCleanJwtCookie().toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenService.getCleanRefreshTokenCookie().toString());
-        return ResponseEntity.ok(Map.of("message", "Logged out"));
+        return responseEntityUtil.ok(Map.of("message", "Logged out"));
     }
 
     /**
      * Change password for current user.
      */
     @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest request, HttpServletRequest servletRequest) {
+    public ResponseEntity<ServiceResponse> changePassword(@Valid @RequestBody ChangePasswordRequest request, HttpServletRequest servletRequest) {
         authenticationService.changePassword(request, servletRequest);
-        return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+        return responseEntityUtil.ok(Map.of("message", "Password changed successfully"));
     }
 
     /**
@@ -126,25 +134,25 @@ public class AuthenticationController {
      */
     @PostMapping("/reset-password")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request, HttpServletRequest servletRequest) {
+    public ResponseEntity<ServiceResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request, HttpServletRequest servletRequest) {
         authenticationService.resetPassword(request, servletRequest);
-        return ResponseEntity.ok(Map.of("message", "Password reset successfully"));
+        return responseEntityUtil.ok(Map.of("message", "Password reset successfully"));
     }
 
     /**
      * Send OTP to user.
      */
     @PostMapping("/send-otp")
-    public ResponseEntity<?> sendOtp(@RequestParam String username, HttpServletRequest request) {
+    public ResponseEntity<ServiceResponse> sendOtp(@RequestParam String username, HttpServletRequest request) {
         otpService.sendLoginOtp(username, request);
-        return ResponseEntity.ok(Map.of("message", "OTP sent"));
+        return responseEntityUtil.ok(Map.of("message", "OTP sent"));
     }
 
     /**
      * Login using OTP (2FA or passwordless).
      */
     @PostMapping("/login-otp")
-    public ResponseEntity<AuthenticationResponse> loginOtp(@RequestParam String username, @RequestParam String otp) {
+    public ResponseEntity<ServiceResponse> loginOtp(@RequestParam String username, @RequestParam String otp) {
         if (!otpService.verifyOtp(username, otp)) {
             throw new IllegalArgumentException("Invalid or expired OTP");
         }
@@ -152,20 +160,30 @@ public class AuthenticationController {
         User user = userRepository.findByUsername(username).orElseThrow(() -> new IllegalArgumentException("User not found"));
         String jwt = jwtService.generateToken(user);
         RefreshToken refresh = refreshTokenService.createRefreshToken(user.getId());
-        AuthenticationResponse resp = AuthenticationResponse.builder().accessToken(jwt).refreshToken(refresh.getToken()).id(user.getId()).username(user.getUsername()).roles(user.getRoles().stream().flatMap(r -> r.getPermissions().stream()).map(Permission::getName).toList()).tokenType("Bearer").build();
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(jwt).toString()).header(HttpHeaders.SET_COOKIE, refreshTokenService.generateRefreshTokenCookie(refresh.getToken()).toString()).body(resp);
+        AuthenticationResponse resp = AuthenticationResponse.builder()
+                .accessToken(jwt)
+                .refreshToken(refresh.getToken())
+                .id(user.getId())
+                .username(user.getUsername()).roles(user.getRoles().stream()
+                        .flatMap(r -> r.getPermissions().stream()).map(Permission::getName).toList())
+                .tokenType("Bearer")
+                .build();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(jwt).toString());
+        headers.add(HttpHeaders.SET_COOKIE, refreshTokenService.generateRefreshTokenCookie(refresh.getToken()).toString());
+        return responseEntityUtil.ok(resp, headers);
     }
 
     @ConditionalOnBooleanProperty("app.passwordless.enabled")
     @PostMapping("/passwordless/send-otp")
-    public ResponseEntity<?> sendPasswordlessOtp(@RequestParam String username, HttpServletRequest request) {
+    public ResponseEntity<ServiceResponse> sendPasswordlessOtp(@RequestParam String username, HttpServletRequest request) {
         otpService.sendLoginOtp(username, request);
-        return ResponseEntity.ok(Map.of("message", "OTP sent"));
+        return responseEntityUtil.ok(Map.of("message", "OTP sent"));
     }
 
     @ConditionalOnBooleanProperty("app.passwordless.enabled")
     @PostMapping("/passwordless/login")
-    public ResponseEntity<AuthenticationResponse> passwordlessLogin(@RequestParam String username, @RequestParam String otp) {
+    public ResponseEntity<ServiceResponse> passwordlessLogin(@RequestParam String username, @RequestParam String otp) {
         if (!otpService.verifyOtp(username, otp)) {
             throw new IllegalArgumentException("Invalid or expired OTP");
         }
@@ -177,14 +195,24 @@ public class AuthenticationController {
         ResponseCookie jwtCookie = jwtService.generateJwtCookie(jwt);
         ResponseCookie refreshCookie = refreshTokenService.generateRefreshTokenCookie(refreshToken.getToken());
         var authorities = user.getRoles().stream().flatMap(role -> role.getPermissions().stream()).map(Permission::getName).toList();
-        AuthenticationResponse resp = AuthenticationResponse.builder().accessToken(jwt).refreshToken(refreshToken.getToken()).id(user.getId()).username(user.getUsername()).roles(authorities).tokenType("Bearer").build();
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString()).header(HttpHeaders.SET_COOKIE, refreshCookie.toString()).body(resp);
+        AuthenticationResponse resp = AuthenticationResponse.builder()
+                .accessToken(jwt)
+                .refreshToken(refreshToken.getToken())
+                .id(user.getId())
+                .username(user.getUsername())
+                .roles(authorities)
+                .tokenType("Bearer")
+                .build();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, jwtCookie.toString());
+        headers.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+        return responseEntityUtil.ok(resp, headers);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/unlock/{userId}")
-    public ResponseEntity<?> unlock(@PathVariable Long userId) {
+    public ResponseEntity<ServiceResponse> unlock(@PathVariable Long userId) {
         accountLockService.forceUnlock(userId);
-        return ResponseEntity.ok(Map.of("message", "unlocked"));
+        return responseEntityUtil.ok(Map.of("message", "unlocked"));
     }
 }
