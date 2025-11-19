@@ -11,9 +11,11 @@ import com.niam.usermanagement.service.MenuService;
 import com.niam.usermanagement.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -38,30 +40,6 @@ public class MenuServiceImpl implements MenuService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional("transactionManager")
-    @Override
-    public Menu createMenu(Menu menu) {
-        return menuRepository.save(menu);
-    }
-
-    @Transactional("transactionManager")
-    @Override
-    public Menu updateMenu(Long id, Menu updated) {
-        Menu existing = getMenuById(id);
-        existing.setLabel(updated.getLabel());
-        existing.setIcon(updated.getIcon());
-        existing.setRoute(updated.getRoute());
-        existing.setPermissions(updated.getPermissions());
-        return menuRepository.save(existing);
-    }
-
-    @Transactional("transactionManager")
-    @Override
-    public void deleteMenu(Long id) {
-        Menu existing = getMenuById(id);
-        menuRepository.delete(existing);
-    }
-
     @Override
     public Menu getMenuById(Long id) {
         return menuRepository.findById(id)
@@ -82,5 +60,35 @@ public class MenuServiceImpl implements MenuService {
                 .flatMap(role -> role.getPermissions().stream())
                 .map(Permission::getCode)
                 .collect(Collectors.toSet());
+    }
+
+    @Transactional
+    @Override
+    public List<Menu> createMenus(List<Menu> menus) {
+        return menuRepository.saveAll(menus);
+    }
+
+    @Transactional
+    @Override
+    public List<Menu> updateMenus(List<Menu> menus) {
+        List<Menu> updated = new ArrayList<>();
+        for (Menu menu : menus) {
+            Menu existing = menuRepository.findById(menu.getId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            ResultResponseStatus.ENTITY_NOT_FOUND.getResponseCode(),
+                            ResultResponseStatus.ENTITY_NOT_FOUND.getReasonCode(),
+                            "Menu with id=" + menu.getId() + " not found"
+                    ));
+            BeanUtils.copyProperties(menu, existing, "id");
+            updated.add(existing);
+        }
+        return menuRepository.saveAll(updated);
+    }
+
+    @Transactional("transactionManager")
+    @Override
+    public void deleteMenu(Long id) {
+        Menu existing = getMenuById(id);
+        menuRepository.delete(existing);
     }
 }

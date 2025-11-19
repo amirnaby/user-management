@@ -1,14 +1,13 @@
 package com.niam.usermanagement.service.impl;
 
 import com.niam.common.exception.IllegalArgumentException;
-import com.niam.common.utils.GenericDtoMapper;
 import com.niam.usermanagement.model.entities.PasswordHistory;
 import com.niam.usermanagement.model.entities.Role;
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.payload.request.AuthenticationRequest;
 import com.niam.usermanagement.model.payload.request.ChangePasswordRequest;
-import com.niam.usermanagement.model.payload.request.UserDTO;
 import com.niam.usermanagement.model.payload.request.ResetPasswordRequest;
+import com.niam.usermanagement.model.payload.request.UserDTO;
 import com.niam.usermanagement.model.payload.response.AuthenticationResponse;
 import com.niam.usermanagement.model.repository.PasswordHistoryRepository;
 import com.niam.usermanagement.model.repository.RoleRepository;
@@ -18,6 +17,7 @@ import com.niam.usermanagement.utils.AuthUtils;
 import com.niam.usermanagement.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -62,7 +62,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Role defaultRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new IllegalStateException("Default role not found"));
         User user = new User();
-        GenericDtoMapper.copyNonNullProperties(request, user, "roleName");
+        BeanUtils.copyProperties(request, user, "roleName");
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.getRoles().add(defaultRole);
         user.setMustChangePassword(false);

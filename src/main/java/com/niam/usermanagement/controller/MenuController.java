@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/menus")
 @RequiredArgsConstructor
@@ -31,14 +33,14 @@ public class MenuController {
         return responseEntityUtil.ok(menuService.getMenuById(id));
     }
 
-    @PostMapping
-    public ResponseEntity<ServiceResponse> createMenu(@RequestBody Menu menu) {
-        return responseEntityUtil.ok(menuService.createMenu(menu));
+    @PostMapping("/batch")
+    public ResponseEntity<ServiceResponse> createMenus(@RequestBody List<Menu> menus) {
+        return responseEntityUtil.ok(menuService.createMenus(menus));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ServiceResponse> updateMenu(@PathVariable Long id, @RequestBody Menu menu) {
-        return responseEntityUtil.ok(menuService.updateMenu(id, menu));
+    @PutMapping("/batch")
+    public ResponseEntity<ServiceResponse> updateMenus(@RequestBody List<Menu> menus) {
+        return responseEntityUtil.ok(menuService.updateMenus(menus));
     }
 
     @DeleteMapping("/{id}")

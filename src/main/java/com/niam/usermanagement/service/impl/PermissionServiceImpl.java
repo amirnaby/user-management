@@ -1,11 +1,9 @@
 package com.niam.usermanagement.service.impl;
 
 import com.niam.common.exception.EntityNotFoundException;
-import com.niam.common.utils.GenericDtoMapper;
 import com.niam.usermanagement.model.entities.Permission;
 import com.niam.usermanagement.model.repository.PermissionRepository;
 import com.niam.usermanagement.model.repository.RoleRepository;
-import com.niam.usermanagement.model.repository.UserGroupRepository;
 import com.niam.usermanagement.service.PermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,10 +53,8 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    public Permission create(Permission dto) {
-        Permission p = new Permission();
-        GenericDtoMapper.copyNonNullProperties(dto, p);
-        return permissionRepository.save(p);
+    public Permission create(Permission permission) {
+        return permissionRepository.save(permission);
     }
 
     @Transactional("transactionManager")

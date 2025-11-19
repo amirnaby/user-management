@@ -1,6 +1,5 @@
 package com.niam.usermanagement.service.impl;
 
-import com.niam.common.utils.GenericDtoMapper;
 import com.niam.usermanagement.model.entities.Role;
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.payload.request.UserDTO;
@@ -12,6 +11,7 @@ import com.niam.usermanagement.service.UserService;
 import com.niam.usermanagement.utils.AuthUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -66,7 +66,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Override
     public User createUser(UserDTO request) {
         User user = new User();
-        GenericDtoMapper.copyNonNullProperties(request, user, "roleName");
+        BeanUtils.copyProperties(request, user, "roleName");
         Role role = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new IllegalArgumentException("Role not found"));
         user.getRoles().add(role);
@@ -79,7 +79,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     public User updateUser(String username, UserDTO request) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        GenericDtoMapper.copyNonNullProperties(request, user, "roleNames");
+        BeanUtils.copyProperties(request, user, "roleNames");
         if (request.getRoleNames() != null && !request.getRoleNames().isEmpty()) {
             Set<Role> newRoles = request.getRoleNames().stream()
                     .map(n -> roleRepository.findByName(n)
@@ -103,7 +103,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Override
     public User updateProfile(UserDTO request) {
         User currentUser = authUtils.getCurrentUser();
-        GenericDtoMapper.copyNonNullProperties(request, currentUser, "password");
+        BeanUtils.copyProperties(request, currentUser, "password");
         return userRepository.save(currentUser);
     }
 }

@@ -8,9 +8,9 @@ import java.util.List;
 public interface MenuService {
     List<Menu> getMenusForCurrentUser(HttpServletRequest request);
 
-    Menu createMenu(Menu menu);
+    List<Menu> createMenus(List<Menu> menu);
 
-    Menu updateMenu(Long id, Menu updated);
+    List<Menu> updateMenus(List<Menu> updated);
 
     void deleteMenu(Long id);
 
