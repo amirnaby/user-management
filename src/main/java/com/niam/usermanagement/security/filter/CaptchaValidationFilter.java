@@ -6,12 +6,14 @@ import com.niam.usermanagement.model.payload.request.CaptchaValidateRequest;
 import com.niam.usermanagement.model.enums.CaptchaProviderType;
 import com.niam.usermanagement.service.captcha.provider.CaptchaProvider;
 import com.niam.usermanagement.service.captcha.provider.CaptchaProviderRegistry;
+import com.niam.usermanagement.utils.RequestUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -60,7 +62,6 @@ public class CaptchaValidationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
-
         if (!MediaType.APPLICATION_JSON_VALUE.equalsIgnoreCase(request.getContentType())) {
             filterChain.doFilter(request, response);
             return;
@@ -71,7 +72,7 @@ public class CaptchaValidationFilter extends OncePerRequestFilter {
             body = objectMapper.readValue(request.getInputStream(), new TypeReference<>() {
             });
         } catch (Exception ex) {
-            respond(response, HttpServletResponse.SC_BAD_REQUEST, "Invalid JSON body");
+            RequestUtils.writeError(response, "Invalid JSON body", HttpStatus.BAD_REQUEST);
             return;
         }
 
@@ -81,7 +82,7 @@ public class CaptchaValidationFilter extends OncePerRequestFilter {
         String resp = respObj == null ? null : respObj.toString();
 
         if (token == null || resp == null) {
-            respond(response, HttpServletResponse.SC_BAD_REQUEST, "captchaToken and captchaResponse are required");
+            RequestUtils.writeError(response, "captchaToken and captchaResponse are required", HttpStatus.BAD_REQUEST);
             return;
         }
 
@@ -89,21 +90,15 @@ public class CaptchaValidationFilter extends OncePerRequestFilter {
         try {
             valid = captchaProvider.validate(new CaptchaValidateRequest(token, resp));
         } catch (Exception ex) {
-            respond(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Captcha validation failed");
+            RequestUtils.writeError(response, "Captcha validation failed", HttpStatus.NOT_ACCEPTABLE);
             return;
         }
 
         if (!valid) {
-            respond(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid captcha");
+            RequestUtils.writeError(response, "Invalid captcha", HttpStatus.UNAUTHORIZED);
             return;
         }
 
         filterChain.doFilter(request, response);
-    }
-
-    private void respond(HttpServletResponse response, int status, String message) throws IOException {
-        response.setStatus(status);
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        objectMapper.writeValue(response.getOutputStream(), Map.of("status", status, "message", message));
     }
 }

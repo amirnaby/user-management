@@ -5,6 +5,7 @@ import com.niam.usermanagement.exception.TokenException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -22,6 +23,16 @@ public class GlobalRestExceptionHandler {
                 .responseDescription(ex.getMessage())
                 .build();
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(err);
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAuthorizationDenied(AuthorizationDeniedException ex) {
+        ErrorResponse body = ErrorResponse.builder()
+                .responseCode(HttpStatus.FORBIDDEN.value())
+                .reasonCode(HttpStatus.FORBIDDEN.series().value())
+                .responseDescription(ex.getLocalizedMessage())
+                .build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -48,7 +59,7 @@ public class GlobalRestExceptionHandler {
         ErrorResponse err = ErrorResponse.builder()
                 .responseCode(HttpStatus.BAD_REQUEST.value())
                 .reasonCode(HttpStatus.BAD_REQUEST.series().value())
-                .responseDescription("Malformed JSON")
+                .responseDescription(ex.getLocalizedMessage())
                 .build();
         return ResponseEntity.badRequest().body(err);
     }

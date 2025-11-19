@@ -5,6 +5,7 @@ import com.niam.common.utils.ResponseEntityUtil;
 import com.niam.usermanagement.model.payload.request.UserDTO;
 import com.niam.usermanagement.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -20,9 +21,8 @@ public class UserController {
     private final UserService userService;
     private final ResponseEntityUtil responseEntityUtil;
 
-    @Tag(name = "Update user profile")
     @PutMapping
-    public ResponseEntity<ServiceResponse> updateProfile(@RequestBody UserDTO request) {
+    public ResponseEntity<ServiceResponse> updateProfile(@Valid @RequestBody UserDTO request) {
         return responseEntityUtil.ok(userService.updateProfile(request));
     }
 }

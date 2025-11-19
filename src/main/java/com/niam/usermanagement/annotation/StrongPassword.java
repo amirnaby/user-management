@@ -1,5 +1,6 @@
-package com.niam.usermanagement.utils.validation;
+package com.niam.usermanagement.annotation;
 
+import com.niam.usermanagement.utils.validation.StrongPasswordValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 

@@ -1,6 +1,6 @@
 package com.niam.usermanagement.utils;
 
-import com.niam.common.exception.IllegalStateException;
+import com.niam.usermanagement.exception.AuthenticationException;
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,7 +35,7 @@ public class AuthUtils {
                 .getAuthentication().getName();
 
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalStateException("Logged in user not found"));
+                .orElseThrow(() -> new AuthenticationException("Logged in user not found"));
     }
 
     public String extractClientIp(HttpServletRequest request) {

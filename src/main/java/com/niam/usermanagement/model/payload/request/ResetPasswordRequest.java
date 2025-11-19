@@ -1,6 +1,6 @@
 package com.niam.usermanagement.model.payload.request;
 
-import com.niam.usermanagement.utils.validation.StrongPassword;
+import com.niam.usermanagement.annotation.StrongPassword;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;

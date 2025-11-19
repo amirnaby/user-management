@@ -1,6 +1,8 @@
 package com.niam.usermanagement.service.impl;
 
+import com.niam.common.exception.*;
 import com.niam.common.exception.IllegalArgumentException;
+import com.niam.usermanagement.exception.AuthenticationException;
 import com.niam.usermanagement.model.entities.PasswordHistory;
 import com.niam.usermanagement.model.entities.Role;
 import com.niam.usermanagement.model.entities.User;
@@ -18,6 +20,7 @@ import com.niam.usermanagement.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -46,6 +49,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final PasswordExpirationService passwordExpirationService;
     private final AuditLogService auditLogService;
     private final AuthUtils authUtils;
+    @Value("${app.otp.enabled:false}")
+    private boolean isOtpEnabled;
 
     @Override
     public AuthenticationResponse register(UserDTO request) {
@@ -60,7 +65,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         Role defaultRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new IllegalStateException("Default role not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Default role not found"));
         User user = new User();
         BeanUtils.copyProperties(request, user, "roleName");
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -88,16 +93,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletRequest servletRequest) {
+        if (isOtpEnabled) throw new NotFoundException("Call OTP endpoint");
         String ip = RequestUtils.getClientIp(servletRequest);
         String userAgent = RequestUtils.getUserAgent(servletRequest);
         String username = request.getUsername();
 
         // quick checks before auth: are we already blocked?
         if (attemptService.isIpBlocked(ip)) {
-            throw new IllegalStateException("Too many requests from your IP");
+            throw new AuthenticationException("Too many requests from your IP");
         }
         if (attemptService.isUsernameBlocked(username)) {
-            throw new IllegalStateException("Too many login attempts for this username");
+            throw new AuthenticationException("Too many login attempts for this username");
         }
 
         try {
@@ -117,7 +123,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
             // if ip crosses threshold now, optionally take action: here we just throw (could call an IP block action)
             if (!ipStillAllowed) {
-                throw new IllegalStateException("Too many login attempts from your IP");
+                throw new AuthenticationException("Too many login attempts from your IP");
             }
 
             throw ex;
@@ -126,15 +132,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         attemptService.registerSuccess(username, ip);
 
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password."));
+                .orElseThrow(() -> new AuthenticationException("Invalid username or password."));
 
         if (!user.isEnabled()) {
-            throw new IllegalStateException("Account is disabled");
+            throw new AuthenticationException("Account is disabled");
         }
 
         accountLockService.unlockIfExpired(user);
         if (user.isAccountLocked()) {
-            throw new IllegalStateException("Account locked until: " + user.getLockUntil());
+            throw new AuthenticationException("Account locked until: " + user.getLockUntil());
         }
 
         if (passwordExpirationService.isExpired(user)) {
@@ -168,15 +174,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         User currentUser = authUtils.getCurrentUser();
         if (!passwordEncoder.matches(request.getOldPassword(), currentUser.getPassword())) {
-            throw new IllegalArgumentException("Old password is incorrect");
+            throw new ValidationException("Old password is incorrect");
         }
 
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new IllegalArgumentException("New password and confirmation do not match");
+            throw new ValidationException("New password and confirmation do not match");
         }
 
         if (passwordEncoder.matches(request.getNewPassword(), currentUser.getPassword())) {
-            throw new IllegalArgumentException("New password must be different from old password");
+            throw new ValidationException("New password must be different from old password");
         }
 
         checkPasswordHistoryAndSave(currentUser, request.getNewPassword(), false);
@@ -198,10 +204,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String userAgent = RequestUtils.getUserAgent(servletRequest);
 
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new IllegalArgumentException("Passwords do not match");
+            throw new ValidationException("Passwords do not match");
         }
 
         checkPasswordHistoryAndSave(user, request.getNewPassword(), true);
@@ -222,7 +228,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         for (PasswordHistory ph : last) {
             if (passwordEncoder.matches(newPassword, ph.getOldPasswordHash()))
-                throw new IllegalArgumentException("Your new password has been used recently.");
+                throw new ValidationException("Your new password has been used recently.");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));

@@ -2,10 +2,12 @@ package com.niam.usermanagement.security.filter;
 
 import com.niam.usermanagement.service.RateLimitService;
 import com.niam.usermanagement.utils.AuthUtils;
+import com.niam.usermanagement.utils.RequestUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -33,9 +35,8 @@ public class IpRateLimitFilter extends OncePerRequestFilter {
         if (path.startsWith("/api/v1/auth")) {
             String ip = authUtils.extractClientIp(request);
             if (!rateLimitService.allowRequestForIp(ip)) {
-                response.setStatus(429);
-                response.setContentType("application/json");
-                response.getWriter().write("{\"message\":\"Too many requests from IP\"}");
+                String message = "Too many requests from IP";
+                RequestUtils.writeError(response, message, HttpStatus.TOO_MANY_REQUESTS);
                 return;
             }
         }

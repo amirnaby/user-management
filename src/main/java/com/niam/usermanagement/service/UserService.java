@@ -3,8 +3,6 @@ package com.niam.usermanagement.service;
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.payload.request.UserDTO;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -15,17 +13,15 @@ public interface UserService {
 
     List<User> getAllUsers();
 
-    UserDetails loadUserByUsername(String username);
+    User loadUserByUsername(String username);
 
-    @Transactional("transactionManager")
     User createUser(UserDTO request);
 
-    @Transactional("transactionManager")
+    User updateUser(User user);
+
     User updateUser(String username, UserDTO request);
 
-    @Transactional("transactionManager")
     void deleteUser(String username);
 
-    @Transactional("transactionManager")
     User updateProfile(UserDTO request);
 }

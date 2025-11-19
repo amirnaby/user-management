@@ -32,7 +32,7 @@ public class MenuServiceImpl implements MenuService {
         String token = jwtService.getJwtFromRequest(request);
         if (token == null) return List.of();
         String username = jwtService.extractUsername(token);
-        User user = (User) userService.loadUserByUsername(username);
+        User user = userService.loadUserByUsername(username);
         Set<String> userPermissions = getUserPermissions(user);
         return menuRepository.findAll().stream()
                 .filter(menu -> menu.getPermissions().stream()

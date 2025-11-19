@@ -1,9 +1,8 @@
 package com.niam.usermanagement.security.filter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.niam.common.model.response.ErrorResponse;
 import com.niam.usermanagement.service.JwtService;
 import com.niam.usermanagement.service.TokenBlacklistService;
+import com.niam.usermanagement.utils.RequestUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.FilterChain;
@@ -12,7 +11,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
@@ -42,25 +40,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
-                                    @NonNull FilterChain filterChain) {
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
         String jwt = jwtService.getJwtFromRequest(request);
         String authHeader = request.getHeader("Authorization");
 
         if (jwt != null && tokenBlacklistService.isBlacklisted(jwt)) {
-            try {
-                filterChain.doFilter(request, response);
-            } catch (IOException | ServletException e) {
-                writeError(response, "token is blacklisted. Please unblock it first");
-            }
+            filterChain.doFilter(request, response);
             return;
         }
 
-        if ((jwt == null && (authHeader == null || !authHeader.startsWith("Bearer "))) || request.getRequestURI().contains("/auth")) {
-            try {
-                filterChain.doFilter(request, response);
-            } catch (IOException | ServletException e) {
-                writeError(response, "token is required. Please authenticate first");
-            }
+        if ((jwt == null && (authHeader == null || !authHeader.startsWith("Bearer ")))) {
+            filterChain.doFilter(request, response);
             return;
         }
 
@@ -72,7 +62,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             username = jwtService.extractUsername(jwt);
         } catch (ExpiredJwtException e) {
-            writeError(response, "token was expired. Please authenticate again");
+            RequestUtils.writeError(response, "token was expired. Please authenticate again", HttpStatus.UNAUTHORIZED);
         }
         if (StringUtils.isNotEmpty(username) &&
                 SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -92,27 +82,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        try {
-            filterChain.doFilter(request, response);
-        } catch (IOException | ServletException e) {
-            writeError(response, "token error!");
-        }
-    }
-
-    private void writeError(HttpServletResponse response, String message) {
-        ErrorResponse err = ErrorResponse.builder()
-                .responseCode(HttpStatus.UNAUTHORIZED.value())
-                .reasonCode(HttpStatus.UNAUTHORIZED.series().value())
-                .responseDescription(message)
-                .build();
-
-        response.setStatus(HttpStatus.UNAUTHORIZED.value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
-        try {
-            new ObjectMapper().writeValue(response.getOutputStream(), err);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        filterChain.doFilter(request, response);
     }
 }

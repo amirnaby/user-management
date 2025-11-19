@@ -5,11 +5,13 @@ import com.niam.common.utils.ResponseEntityUtil;
 import com.niam.usermanagement.annotation.HasPermission;
 import com.niam.usermanagement.model.enums.PRIVILEGE;
 import com.niam.usermanagement.model.payload.request.UserDTO;
+import com.niam.usermanagement.model.repository.UserRepository;
 import com.niam.usermanagement.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
+import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "User Management Admin", description = "Admin endpoints")
@@ -22,7 +24,7 @@ public class AdminController {
 
     @PostMapping("/users")
     @HasPermission(PRIVILEGE.USER_MANAGE)
-    public ResponseEntity<ServiceResponse> createUserByAdmin(@Valid @RequestBody UserDTO request) {
+    public ResponseEntity<ServiceResponse> createUserByAdmin(@Validated({Default.class, UserRepository.class}) @RequestBody UserDTO request) {
         return responseEntityUtil.ok(userService.createUser(request));
     }
 

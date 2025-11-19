@@ -42,7 +42,7 @@ public class User extends Auditable implements UserDetails {
     private String lastname;
 
     @NotBlank
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, updatable = false)
     private String username;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)

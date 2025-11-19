@@ -1,8 +1,10 @@
 package com.niam.usermanagement.service.otp;
 
-import com.niam.usermanagement.model.payload.request.OtpRequest;
+import com.niam.common.exception.EntityNotFoundException;
+import com.niam.common.exception.NotFoundException;
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.enums.OtpProviderType;
+import com.niam.usermanagement.model.payload.request.OtpRequest;
 import com.niam.usermanagement.model.repository.UserRepository;
 import com.niam.usermanagement.service.otp.provider.DevOtpProvider;
 import com.niam.usermanagement.service.otp.provider.OtpProvider;
@@ -41,13 +43,13 @@ public class OtpService {
      * Send login OTP to user using configured provider.
      */
     public void sendLoginOtp(String username, HttpServletRequest request) {
-        if (!otpEnabled) throw new IllegalStateException("OTP disabled");
+        if (!otpEnabled) throw new NotFoundException("OTP is disabled");
 
         String ip = authUtils.extractClientIp(request);
         otpRateLimitService.checkLimitForIp(ip);
         otpRateLimitService.checkLimitForUsername(username);
 
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new EntityNotFoundException("User not found"));
         String otp = generateOtp();
         otpStore.saveOtp(username, otp, ttlSeconds);
 
@@ -65,6 +67,8 @@ public class OtpService {
     }
 
     public boolean verifyOtp(String username, String otp) {
+        if (!otpEnabled) throw new NotFoundException("OTP is disabled");
+
         if (configuredProvider == OtpProviderType.DEV) {
             DevOtpProvider dev = (DevOtpProvider) providerRegistry.get(OtpProviderType.DEV);
             if (dev.isMasterCode(otp)) return true;

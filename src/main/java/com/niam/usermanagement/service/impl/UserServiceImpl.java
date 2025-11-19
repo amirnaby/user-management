@@ -1,5 +1,6 @@
 package com.niam.usermanagement.service.impl;
 
+import com.niam.common.exception.EntityNotFoundException;
 import com.niam.usermanagement.model.entities.Role;
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.payload.request.UserDTO;
@@ -13,9 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,15 +36,15 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     private final JwtService jwtService;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public User loadUserByUsername(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
     }
 
     @Override
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + userId));
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
     }
 
     @Override
@@ -68,22 +67,39 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         User user = new User();
         BeanUtils.copyProperties(request, user, "roleName");
         Role role = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new IllegalArgumentException("Role not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Role not found"));
         user.getRoles().add(role);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         return userRepository.save(user);
+    }
+
+
+    @Transactional("transactionManager")
+    @Override
+    public User updateUser(User updated) {
+        User existing = userRepository.findByUsername(updated.getUsername())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        BeanUtils.copyProperties(updated, existing);
+        if (updated.getRoles() != null && !updated.getRoles().isEmpty()) {
+            Set<Role> newRoles = updated.getRoles().stream()
+                    .map(n -> roleRepository.findByName(n.getName())
+                            .orElseThrow(() -> new EntityNotFoundException("Role not found: " + n)))
+                    .collect(Collectors.toSet());
+            existing.setRoles(newRoles);
+        }
+        return userRepository.save(existing);
     }
 
     @Transactional("transactionManager")
     @Override
     public User updateUser(String username, UserDTO request) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
         BeanUtils.copyProperties(request, user, "roleNames");
         if (request.getRoleNames() != null && !request.getRoleNames().isEmpty()) {
             Set<Role> newRoles = request.getRoleNames().stream()
                     .map(n -> roleRepository.findByName(n)
-                            .orElseThrow(() -> new IllegalArgumentException("Role not found: " + n)))
+                            .orElseThrow(() -> new EntityNotFoundException("Role not found: " + n)))
                     .collect(Collectors.toSet());
             user.setRoles(newRoles);
         }
@@ -94,7 +110,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Override
     public void deleteUser(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
         refreshTokenService.revokeTokensByUser(user);
         userRepository.delete(user);
     }
@@ -103,7 +119,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Override
     public User updateProfile(UserDTO request) {
         User currentUser = authUtils.getCurrentUser();
-        BeanUtils.copyProperties(request, currentUser, "password");
+        BeanUtils.copyProperties(request, currentUser, "username", "password", "roleNames");
         return userRepository.save(currentUser);
     }
 }
