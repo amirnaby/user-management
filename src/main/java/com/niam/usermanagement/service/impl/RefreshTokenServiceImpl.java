@@ -67,11 +67,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public void verifyExpiration(RefreshToken token) {
         if (token == null) {
             log.error("Token is null");
-            throw new TokenException(null, "Token is null");
+            throw new TokenException("Token is null");
         }
         if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
             refreshTokenRepository.delete(token);
-            throw new TokenException(token.getToken(), "Refresh token was expired. Please authenticate again");
+            throw new TokenException("Refresh token was expired. Please authenticate again");
         }
     }
 
@@ -83,7 +83,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     public RefreshToken rotateRefreshToken(String oldToken) {
         RefreshToken existing = refreshTokenRepository.findByToken(oldToken)
-                .orElseThrow(() -> new TokenException(oldToken, "Refresh token not found"));
+                .orElseThrow(() -> new TokenException("Refresh token not found"));
 
         // check expiry
         verifyExpiration(existing);
@@ -92,7 +92,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
             // replay detected -> revoke all user's tokens
             log.warn("Detected refresh token replay for userId={}", existing.getUser().getId());
             revokeTokensByUser(existing.getUser());
-            throw new TokenException(oldToken, "Refresh token replay detected. All sessions revoked. Please login again.");
+            throw new TokenException("Refresh token replay detected. All sessions revoked. Please login again.");
         }
 
         // mark existing revoked (single-use)

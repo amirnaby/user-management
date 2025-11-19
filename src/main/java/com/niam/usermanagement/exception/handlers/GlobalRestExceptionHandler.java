@@ -17,11 +17,11 @@ public class GlobalRestExceptionHandler {
     @ExceptionHandler(TokenException.class)
     public ResponseEntity<ErrorResponse> handleToken(TokenException ex) {
         ErrorResponse err = ErrorResponse.builder()
-                .responseCode(HttpStatus.FORBIDDEN.value())
-                .reasonCode(HttpStatus.FORBIDDEN.series().value())
+                .responseCode(HttpStatus.UNAUTHORIZED.value())
+                .reasonCode(HttpStatus.UNAUTHORIZED.series().value())
                 .responseDescription(ex.getMessage())
                 .build();
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(err);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(err);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -51,15 +51,5 @@ public class GlobalRestExceptionHandler {
                 .responseDescription("Malformed JSON")
                 .build();
         return ResponseEntity.badRequest().body(err);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleOthers(Exception ex) {
-        ErrorResponse err = ErrorResponse.builder()
-                .responseCode(500)
-                .reasonCode(5)
-                .responseDescription(ex.getMessage())
-                .build();
-        return ResponseEntity.internalServerError().body(err);
     }
 }
