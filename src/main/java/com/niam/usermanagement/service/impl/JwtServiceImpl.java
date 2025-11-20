@@ -29,11 +29,11 @@ import java.util.function.Function;
 @RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
     private final TokenBlacklistService tokenBlacklistService;
-    @Value("${application.security.jwt.secret-key}")
+    @Value("${application.security.jwt.secret-key:586B633834416E396D7436753879382F423F4428482B4C6250655367566B5970}")
     private String secretKey;
     @Value("${application.security.jwt.expiration:900000}") // default 15 minutes
     private long jwtExpiration; // ms
-    @Value("${application.security.jwt.cookie-name}")
+    @Value("${application.security.jwt.cookie-name:access-token}")
     private String jwtCookieName;
 
     /* ---------------------- Extract Claims ---------------------- */

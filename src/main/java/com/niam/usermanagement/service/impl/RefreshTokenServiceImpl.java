@@ -36,10 +36,10 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
-    @Value("${application.security.jwt.refresh-token.expiration}")
+    @Value("${application.security.jwt.refresh-token.expiration:1296000000}")
     private long refreshExpiration; // ms
 
-    @Value("${application.security.jwt.refresh-token.cookie-name}")
+    @Value("${application.security.jwt.refresh-token.cookie-name:refresh-token}")
     private String refreshTokenName;
 
     @Override
