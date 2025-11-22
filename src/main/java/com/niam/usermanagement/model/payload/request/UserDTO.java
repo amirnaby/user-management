@@ -3,7 +3,7 @@ package com.niam.usermanagement.model.payload.request;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.niam.usermanagement.annotation.StrongPassword;
-import com.niam.usermanagement.model.repository.UserRepository;
+import com.niam.usermanagement.service.UserService;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -24,11 +24,11 @@ public class UserDTO {
     private String firstname;
     @NotBlank(message = "lastname is required")
     private String lastname;
-    @NotBlank(groups = {UserRepository.class}, message = "username is required")
+    @NotBlank(groups = {UserService.class}, message = "username is required")
     private String username;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    @NotBlank(groups = {UserRepository.class}, message = "password is required")
-    @StrongPassword(groups = {UserRepository.class})
+    @NotBlank(groups = {StrongPassword.class}, message = "password is required")
+    @StrongPassword(groups = {StrongPassword.class})
     private String password;
     @NotBlank(message = "email is required")
     @Email

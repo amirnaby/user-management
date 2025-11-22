@@ -3,9 +3,9 @@ package com.niam.usermanagement.controller;
 import com.niam.common.model.response.ServiceResponse;
 import com.niam.common.utils.ResponseEntityUtil;
 import com.niam.usermanagement.annotation.HasPermission;
+import com.niam.usermanagement.annotation.StrongPassword;
 import com.niam.usermanagement.model.enums.PRIVILEGE;
 import com.niam.usermanagement.model.payload.request.UserDTO;
-import com.niam.usermanagement.model.repository.UserRepository;
 import com.niam.usermanagement.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.groups.Default;
@@ -24,7 +24,7 @@ public class AdminController {
 
     @PostMapping("/users")
     @HasPermission(PRIVILEGE.USER_MANAGE)
-    public ResponseEntity<ServiceResponse> createUserByAdmin(@Validated({Default.class, UserRepository.class}) @RequestBody UserDTO request) {
+    public ResponseEntity<ServiceResponse> createUserByAdmin(@Validated({Default.class, StrongPassword.class}) @RequestBody UserDTO request) {
         return responseEntityUtil.ok(userService.createUser(request));
     }
 

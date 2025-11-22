@@ -9,15 +9,13 @@ import java.util.List;
 public interface UserService {
     Long getCurrentUserId(Authentication authentication);
 
-    User getUserById(Long userId);
-
     List<User> getAllUsers();
 
     User loadUserByUsername(String username);
 
     User createUser(UserDTO request);
 
-    User updateUser(User user);
+    void updateUser(User user);
 
     User updateUser(String username, UserDTO request);
 

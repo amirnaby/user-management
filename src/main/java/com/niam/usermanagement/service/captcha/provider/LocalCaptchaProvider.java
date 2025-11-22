@@ -7,6 +7,7 @@ import com.niam.usermanagement.model.payload.response.CaptchaResponse;
 import com.niam.usermanagement.model.payload.request.CaptchaValidateRequest;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -25,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Stores token → (captchaText, expiresAt) in an in-memory map.
  * Suitable for development / single-instance environments.
  */
+@Lazy
 @Service("localCaptchaProvider")
 public class LocalCaptchaProvider implements CaptchaProvider {
     /**

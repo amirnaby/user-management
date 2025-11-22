@@ -9,8 +9,10 @@ import com.niam.usermanagement.service.captcha.provider.CaptchaProvider;
 import com.niam.usermanagement.service.captcha.provider.CaptchaProviderRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+@Lazy
 @Service
 @RequiredArgsConstructor
 public class CaptchaService {

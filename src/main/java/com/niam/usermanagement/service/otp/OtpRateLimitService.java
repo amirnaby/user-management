@@ -3,6 +3,7 @@ package com.niam.usermanagement.service.otp;
 import com.niam.usermanagement.utils.AuthUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+@Lazy
 @Service
 @RequiredArgsConstructor
 public class OtpRateLimitService {

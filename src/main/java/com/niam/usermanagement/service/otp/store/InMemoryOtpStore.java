@@ -1,11 +1,13 @@
 package com.niam.usermanagement.service.otp.store;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Lazy
 @Component
 public class InMemoryOtpStore implements OtpStore {
     private final Map<String, Entry> store = new ConcurrentHashMap<>();

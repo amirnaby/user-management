@@ -1,7 +1,8 @@
 package com.niam.usermanagement.service.impl;
 
-import com.niam.common.exception.*;
+import com.niam.common.exception.EntityNotFoundException;
 import com.niam.common.exception.IllegalArgumentException;
+import com.niam.common.exception.ValidationException;
 import com.niam.usermanagement.exception.AuthenticationException;
 import com.niam.usermanagement.model.entities.PasswordHistory;
 import com.niam.usermanagement.model.entities.Role;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
 public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
+    private final UserService userService;
     private final RoleRepository roleRepository;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
@@ -49,8 +51,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final PasswordExpirationService passwordExpirationService;
     private final AuditLogService auditLogService;
     private final AuthUtils authUtils;
-    @Value("${app.otp.enabled:false}")
-    private boolean isOtpEnabled;
+    @Value("${app.passwordless.enabled:false}")
+    private boolean isPasswordlessEnabled;
 
     @Override
     public AuthenticationResponse register(UserDTO request) {
@@ -93,7 +95,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletRequest servletRequest) {
-        if (isOtpEnabled) throw new NotFoundException("Call OTP endpoint");
         String ip = RequestUtils.getClientIp(servletRequest);
         String userAgent = RequestUtils.getUserAgent(servletRequest);
         String username = request.getUsername();
@@ -107,21 +108,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, request.getPassword()));
-        } catch (BadCredentialsException ex) {
-            // register failures and decide if block/lock should happen
-            boolean ipStillAllowed = attemptService.registerFailureForIp(ip); // <-- use return
+            if (isPasswordlessEnabled) userService.loadUserByUsername(username);
+            else
+                authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, request.getPassword()));
+        } catch (BadCredentialsException | EntityNotFoundException ex) {
+            boolean ipStillAllowed = attemptService.registerFailureForIp(ip);
             boolean userStillAllowed = attemptService.registerFailureForUsername(username);
 
-            // log and audit
             auditLogService.log(null, username, "LOGIN_FAIL", ip, userAgent);
 
-            // if username crosses threshold now, lock account
             if (!userStillAllowed) {
-                userRepository.findByUsername(username).ifPresent(accountLockService::lock);
+                accountLockService.lock(userService.loadUserByUsername(username));
             }
 
-            // if ip crosses threshold now, optionally take action: here we just throw (could call an IP block action)
             if (!ipStillAllowed) {
                 throw new AuthenticationException("Too many login attempts from your IP");
             }

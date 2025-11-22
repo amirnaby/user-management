@@ -4,8 +4,10 @@ import com.niam.usermanagement.model.payload.request.CaptchaGenerateRequest;
 import com.niam.usermanagement.model.payload.response.CaptchaResponse;
 import com.niam.usermanagement.model.payload.request.CaptchaValidateRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+@Lazy
 @Slf4j
 @Service("devCaptchaProvider")
 public class DevCaptchaProvider implements CaptchaProvider {

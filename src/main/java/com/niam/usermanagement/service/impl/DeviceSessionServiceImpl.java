@@ -1,5 +1,6 @@
 package com.niam.usermanagement.service.impl;
 
+import com.niam.common.exception.IllegalStateException;
 import com.niam.usermanagement.model.entities.DeviceSession;
 import com.niam.usermanagement.model.repository.DeviceSessionRepository;
 import com.niam.usermanagement.service.DeviceSessionService;

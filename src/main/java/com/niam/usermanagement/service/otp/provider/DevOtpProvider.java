@@ -3,10 +3,12 @@ package com.niam.usermanagement.service.otp.provider;
 import com.niam.usermanagement.model.payload.request.OtpRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-@Service("devOtpProvider")
+@Lazy
 @Slf4j
+@Service("devOtpProvider")
 public class DevOtpProvider implements OtpProvider {
     @Value("${app.otp.dev.master-code:999999}")
     private String masterCode;

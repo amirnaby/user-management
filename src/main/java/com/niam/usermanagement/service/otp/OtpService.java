@@ -1,11 +1,10 @@
 package com.niam.usermanagement.service.otp;
 
-import com.niam.common.exception.EntityNotFoundException;
 import com.niam.common.exception.NotFoundException;
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.enums.OtpProviderType;
 import com.niam.usermanagement.model.payload.request.OtpRequest;
-import com.niam.usermanagement.model.repository.UserRepository;
+import com.niam.usermanagement.service.UserService;
 import com.niam.usermanagement.service.otp.provider.DevOtpProvider;
 import com.niam.usermanagement.service.otp.provider.OtpProvider;
 import com.niam.usermanagement.service.otp.provider.OtpProviderRegistry;
@@ -14,14 +13,16 @@ import com.niam.usermanagement.utils.AuthUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 
+@Lazy
 @Service
 @RequiredArgsConstructor
 public class OtpService {
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final OtpStore otpStore;
     private final OtpRateLimitService otpRateLimitService;
     private final OtpProviderRegistry providerRegistry;
@@ -49,7 +50,7 @@ public class OtpService {
         otpRateLimitService.checkLimitForIp(ip);
         otpRateLimitService.checkLimitForUsername(username);
 
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new EntityNotFoundException("User not found"));
+        User user = userService.loadUserByUsername(username);
         String otp = generateOtp();
         otpStore.saveOtp(username, otp, ttlSeconds);
 

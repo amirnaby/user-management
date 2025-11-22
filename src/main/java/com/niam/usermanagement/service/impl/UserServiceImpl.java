@@ -42,12 +42,6 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     }
 
     @Override
-    public User getUserById(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
-    }
-
-    @Override
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
@@ -76,7 +70,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Transactional("transactionManager")
     @Override
-    public User updateUser(User updated) {
+    public void updateUser(User updated) {
         User existing = userRepository.findByUsername(updated.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
         BeanUtils.copyProperties(updated, existing);
@@ -87,7 +81,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
                     .collect(Collectors.toSet());
             existing.setRoles(newRoles);
         }
-        return userRepository.save(existing);
+        userRepository.save(existing);
     }
 
     @Transactional("transactionManager")

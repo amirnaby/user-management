@@ -1,6 +1,7 @@
 package com.niam.usermanagement.service.captcha.provider;
 
 import com.niam.usermanagement.model.enums.CaptchaProviderType;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.Map;
  * Providers must be registered with @Service("beanName").
  * Example: localCaptchaProvider, googleCaptchaProvider, etc.
  */
+@Lazy
 @Component
 public class CaptchaProviderRegistry {
     private final Map<String, CaptchaProvider> providers;

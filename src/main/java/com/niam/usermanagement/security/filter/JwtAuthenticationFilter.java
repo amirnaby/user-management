@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * Our jwt class extends OnePerRequestFilter to be executed on every http request
@@ -34,6 +35,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final TokenBlacklistService tokenBlacklistService;
     private final UserDetailsService userDetailsService;
+    private static final Set<String> AUTH_WHITELIST = Set.of(
+            "/api/v1/auth/login",
+            "/api/v1/auth/register"
+    );
 
     /**
      * implementation is provided in config.ApplicationSecurityConfig
@@ -62,7 +67,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             username = jwtService.extractUsername(jwt);
         } catch (ExpiredJwtException e) {
-            RequestUtils.writeError(response, "token was expired. Please authenticate again", HttpStatus.UNAUTHORIZED);
+            if (AUTH_WHITELIST.contains(request.getRequestURI())) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+            RequestUtils.writeError(response, "Token is expired. Please authenticate again", HttpStatus.UNAUTHORIZED);
+        } catch (Exception ex) {
+            if (AUTH_WHITELIST.contains(request.getRequestURI())) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+            RequestUtils.writeError(response, "Token is not valid. Please authenticate again or remove the invalid token", HttpStatus.UNAUTHORIZED);
         }
         if (StringUtils.isNotEmpty(username) &&
                 SecurityContextHolder.getContext().getAuthentication() == null) {

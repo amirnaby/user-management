@@ -1,6 +1,7 @@
 package com.niam.usermanagement.service.otp.provider;
 
 import com.niam.usermanagement.model.enums.OtpProviderType;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.Map;
 /**
  * Registry for resolving OTP providers by their enum type.
  */
+@Lazy
 @Component
 public class OtpProviderRegistry {
     private final Map<String, OtpProvider> providers;
