@@ -1,6 +1,7 @@
 package com.niam.usermanagement.service.otp;
 
 import com.niam.common.exception.NotFoundException;
+import com.niam.usermanagement.config.UMConfigFile;
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.enums.OtpProviderType;
 import com.niam.usermanagement.model.payload.request.OtpRequest;
@@ -12,7 +13,6 @@ import com.niam.usermanagement.service.otp.store.OtpStore;
 import com.niam.usermanagement.utils.AuthUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -23,28 +23,17 @@ import java.security.SecureRandom;
 @RequiredArgsConstructor
 public class OtpService {
     private final UserService userService;
+    private final UMConfigFile configFile;
     private final OtpStore otpStore;
     private final OtpRateLimitService otpRateLimitService;
     private final OtpProviderRegistry providerRegistry;
     private final AuthUtils authUtils;
 
-    @Value("${app.otp.enabled:true}")
-    private boolean otpEnabled;
-
-    @Value("${app.otp.length:6}")
-    private int otpLength;
-
-    @Value("${app.otp.ttl:180}")
-    private long ttlSeconds;
-
-    @Value("${app.otp.provider:DEV}")
-    private OtpProviderType configuredProvider;
-
     /**
      * Send login OTP to user using configured provider.
      */
     public void sendLoginOtp(String username, HttpServletRequest request) {
-        if (!otpEnabled) throw new NotFoundException("OTP is disabled");
+        if (!configFile.isOtpEnabled()) throw new NotFoundException("OTP is disabled");
 
         String ip = authUtils.extractClientIp(request);
         otpRateLimitService.checkLimitForIp(ip);
@@ -52,10 +41,10 @@ public class OtpService {
 
         User user = userService.loadUserByUsername(username);
         String otp = generateOtp();
-        otpStore.saveOtp(username, otp, ttlSeconds);
+        otpStore.saveOtp(username, otp, configFile.getOtpTtlSeconds());
 
-        OtpProvider provider = providerRegistry.get(configuredProvider);
-        String dest = selectDestination(configuredProvider, user);
+        OtpProvider provider = providerRegistry.get(OtpProviderType.valueOf(configFile.getOtpProviderName()));
+        String dest = selectDestination(OtpProviderType.valueOf(configFile.getOtpProviderName()), user);
         provider.send(new OtpRequest(dest, otp));
     }
 
@@ -68,9 +57,9 @@ public class OtpService {
     }
 
     public boolean verifyOtp(String username, String otp) {
-        if (!otpEnabled) throw new NotFoundException("OTP is disabled");
+        if (!configFile.isOtpEnabled()) throw new NotFoundException("OTP is disabled");
 
-        if (configuredProvider == OtpProviderType.DEV) {
+        if (OtpProviderType.valueOf(configFile.getOtpProviderName()) == OtpProviderType.DEV) {
             DevOtpProvider dev = (DevOtpProvider) providerRegistry.get(OtpProviderType.DEV);
             if (dev.isMasterCode(otp)) return true;
         }
@@ -86,8 +75,8 @@ public class OtpService {
 
     private String generateOtp() {
         SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder(otpLength);
-        for (int i = 0; i < otpLength; i++) sb.append(random.nextInt(10));
+        StringBuilder sb = new StringBuilder(configFile.getOtpLength());
+        for (int i = 0; i < configFile.getOtpLength(); i++) sb.append(random.nextInt(10));
         return sb.toString();
     }
 }

@@ -3,6 +3,7 @@ package com.niam.usermanagement.service.impl;
 import com.niam.common.exception.EntityNotFoundException;
 import com.niam.common.exception.IllegalArgumentException;
 import com.niam.common.exception.ValidationException;
+import com.niam.usermanagement.config.UMConfigFile;
 import com.niam.usermanagement.exception.AuthenticationException;
 import com.niam.usermanagement.model.entities.PasswordHistory;
 import com.niam.usermanagement.model.entities.Role;
@@ -21,7 +22,6 @@ import com.niam.usermanagement.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -50,9 +50,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final PasswordHistoryRepository passwordHistoryRepository;
     private final PasswordExpirationService passwordExpirationService;
     private final AuditLogService auditLogService;
+    private final UMConfigFile configFile;
     private final AuthUtils authUtils;
-    @Value("${app.passwordless.enabled:false}")
-    private boolean isPasswordlessEnabled;
+
 
     @Override
     public AuthenticationResponse register(UserDTO request) {
@@ -108,7 +108,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         try {
-            if (isPasswordlessEnabled) userService.loadUserByUsername(username);
+            if (configFile.isPasswordlessEnabled()) userService.loadUserByUsername(username);
             else
                 authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, request.getPassword()));
         } catch (BadCredentialsException | EntityNotFoundException ex) {

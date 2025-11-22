@@ -4,6 +4,7 @@ import com.niam.common.exception.NotFoundException;
 import com.niam.common.model.response.ServiceResponse;
 import com.niam.common.utils.ResponseEntityUtil;
 import com.niam.usermanagement.annotation.StrongPassword;
+import com.niam.usermanagement.config.UMConfigFile;
 import com.niam.usermanagement.exception.AuthenticationException;
 import com.niam.usermanagement.model.payload.request.*;
 import com.niam.usermanagement.model.payload.response.AuthenticationResponse;
@@ -18,7 +19,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -41,11 +41,8 @@ public class AuthenticationController {
     private final CaptchaService captchaService;
     private final OtpService otpService;
     private final AccountLockService accountLockService;
+    private final UMConfigFile configFile;
     private final ResponseEntityUtil responseEntityUtil;
-    @Value("${app.otp.enabled:false}")
-    private boolean isOtpEnabled;
-    @Value("${app.passwordless.enabled:false}")
-    private boolean isPasswordlessEnabled;
 
     /**
      * Register new user. Captcha validation is performed earlier in CaptchaValidationFilter.
@@ -68,7 +65,7 @@ public class AuthenticationController {
     public ResponseEntity<ServiceResponse> authenticate(
             @Validated({Default.class, StrongPassword.class}) @RequestBody AuthenticationRequest request,
             HttpServletRequest servletRequest) {
-        if (isOtpEnabled) throw new NotFoundException("Use OTP login");
+        if (configFile.isOtpEnabled()) throw new NotFoundException("Use OTP login");
         return loginProcess(request, servletRequest);
     }
 
@@ -161,7 +158,7 @@ public class AuthenticationController {
     public ResponseEntity<ServiceResponse> loginOtp(
             @Validated({Default.class, StrongPassword.class, OtpProvider.class}) @RequestBody AuthenticationRequest authenticationRequest,
             HttpServletRequest request) {
-        if (isPasswordlessEnabled) throw new NotFoundException("Use passwordless login");
+        if (configFile.isPasswordlessEnabled()) throw new NotFoundException("Use passwordless login");
         if (!otpService.verifyOtp(authenticationRequest.getUsername(), authenticationRequest.getOtp())) {
             throw new AuthenticationException("Invalid or expired OTP");
         }
@@ -173,7 +170,7 @@ public class AuthenticationController {
     public ResponseEntity<ServiceResponse> passwordlessLogin(
             @Validated({Default.class, OtpProvider.class}) @RequestBody AuthenticationRequest authenticationRequest,
             HttpServletRequest request) {
-        if (!isPasswordlessEnabled) throw new NotFoundException("Use OTP login");
+        if (!configFile.isPasswordlessEnabled()) throw new NotFoundException("Use OTP login");
         if (!otpService.verifyOtp(authenticationRequest.getUsername(), authenticationRequest.getOtp())) {
             throw new AuthenticationException("Invalid or expired OTP");
         }

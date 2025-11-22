@@ -1,11 +1,11 @@
 package com.niam.usermanagement.security;
 
+import com.niam.usermanagement.config.UMConfigFile;
 import com.niam.usermanagement.exception.handlers.CustomAccessDeniedHandler;
 import com.niam.usermanagement.exception.handlers.Http401UnauthorizedEntryPoint;
 import com.niam.usermanagement.security.filter.*;
 import com.niam.usermanagement.service.captcha.provider.CaptchaProviderRegistry;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,9 +42,7 @@ public class SecurityConfiguration {
     private final UsernameRateLimitFilter usernameRateLimitFilter;
     private final CachedBodyFilter cachedBodyFilter;
     private final CaptchaRateLimitFilter captchaRateLimitFilter;
-
-    @Value("${app.captcha.enabled:false}")
-    private boolean captchaEnabled;
+    private final UMConfigFile configFile;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -78,9 +76,9 @@ public class SecurityConfiguration {
         http.addFilterBefore(ipRateLimitFilter, UsernamePasswordAuthenticationFilter.class);
 
         // validate captcha AFTER captcha rate limit
-        if (captchaEnabled) {
+        if (configFile.isCaptchaEnabled()) {
             http.addFilterBefore(captchaRateLimitFilter, UsernamePasswordAuthenticationFilter.class);
-            CaptchaValidationFilter captchaFilter = new CaptchaValidationFilter(captchaProviderRegistry);
+            CaptchaValidationFilter captchaFilter = new CaptchaValidationFilter(captchaProviderRegistry, configFile);
             http.addFilterBefore(captchaFilter, UsernamePasswordAuthenticationFilter.class);
         }
 

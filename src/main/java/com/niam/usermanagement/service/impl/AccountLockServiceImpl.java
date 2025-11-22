@@ -1,10 +1,10 @@
 package com.niam.usermanagement.service.impl;
 
+import com.niam.usermanagement.config.UMConfigFile;
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.service.AccountLockService;
 import com.niam.usermanagement.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -13,14 +13,12 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class AccountLockServiceImpl implements AccountLockService {
     private final UserService userService;
-
-    @Value("${app.security.lock.duration.seconds:900}")
-    private long lockDurationSeconds;
+    private final UMConfigFile configFile;
 
     @Override
     public void lock(User user) {
         user.setAccountLocked(true);
-        user.setLockUntil(Instant.now().plusSeconds(lockDurationSeconds));
+        user.setLockUntil(Instant.now().plusSeconds(configFile.getLockDurationSeconds()));
         userService.updateUser(user);
     }
 

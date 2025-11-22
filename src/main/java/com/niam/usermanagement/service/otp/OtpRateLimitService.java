@@ -1,8 +1,8 @@
 package com.niam.usermanagement.service.otp;
 
+import com.niam.usermanagement.config.UMConfigFile;
 import com.niam.usermanagement.utils.AuthUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -20,16 +20,11 @@ public class OtpRateLimitService {
      * key = "u:username" or "ip:1.2.3.4"
      */
     private final Map<String, Deque<Instant>> map = new ConcurrentHashMap<>();
-
-    @Value("${app.otp.resend.max:3}")
-    private int maxResend;
-
-    @Value("${app.otp.resend.window.seconds:600}")
-    private int windowSeconds;
+    private final UMConfigFile configFile;
 
     private boolean disallow(String key) {
         Deque<Instant> dq = map.computeIfAbsent(key, k -> new ConcurrentLinkedDeque<>());
-        return !AuthUtils.rateLimitHelper(dq, windowSeconds, maxResend);
+        return !AuthUtils.rateLimitHelper(dq, configFile.getOtpWindowSeconds(), configFile.getOtpMaxResend());
     }
 
     public void checkLimitForUsername(String username) {

@@ -1,10 +1,10 @@
 package com.niam.usermanagement.service.impl;
 
+import com.niam.usermanagement.config.UMConfigFile;
 import com.niam.usermanagement.service.TokenBlacklistService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -16,8 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class InMemoryTokenBlacklistService implements TokenBlacklistService {
     private final Map<String, Instant> blacklist = new ConcurrentHashMap<>();
-    @Value("${app.jwt.blacklist.ttl.seconds:3600}")
-    private long defaultTtlSeconds;
+    private final UMConfigFile configFile;
 
     @Override
     public void blacklist(String jti, long ttlSeconds) {
@@ -45,7 +44,7 @@ public class InMemoryTokenBlacklistService implements TokenBlacklistService {
         } catch (Exception ignored) {
         }
         // fallback: blacklist token string itself with default ttl
-        blacklist.put(token, Instant.now().plusSeconds(defaultTtlSeconds));
+        blacklist.put(token, Instant.now().plusSeconds(configFile.getBlacklistTtlSeconds()));
     }
 
     @Override

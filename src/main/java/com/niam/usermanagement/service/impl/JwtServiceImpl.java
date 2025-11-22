@@ -1,5 +1,6 @@
 package com.niam.usermanagement.service.impl;
 
+import com.niam.usermanagement.config.UMConfigFile;
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.service.JwtService;
 import com.niam.usermanagement.service.TokenBlacklistService;
@@ -12,7 +13,6 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -29,12 +29,7 @@ import java.util.function.Function;
 @RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
     private final TokenBlacklistService tokenBlacklistService;
-    @Value("${application.security.jwt.secret-key:586B633834416E396D7436753879382F423F4428482B4C6250655367566B5970}")
-    private String secretKey;
-    @Value("${application.security.jwt.expiration:900000}") // default 15 minutes
-    private long jwtExpiration; // ms
-    @Value("${application.security.jwt.cookie-name:access-token}")
-    private String jwtCookieName;
+    private final UMConfigFile configFile;
 
     /* ---------------------- Extract Claims ---------------------- */
     @Override
@@ -74,7 +69,7 @@ public class JwtServiceImpl implements JwtService {
                 .setId(jti)                 // JTI for blacklist
                 .claim("uid", userId)       // userId safe bind
                 .setIssuedAt(new Date(now))
-                .setExpiration(new Date(now + jwtExpiration))
+                .setExpiration(new Date(now + configFile.getJwtExpiration()))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -112,12 +107,12 @@ public class JwtServiceImpl implements JwtService {
     /* ---------------------- Cookie Helpers ---------------------- */
     @Override
     public ResponseCookie generateJwtCookie(String jwt) {
-        return ResponseCookie.from(jwtCookieName, jwt)
+        return ResponseCookie.from(configFile.getJwtCookieName(), jwt)
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
                 .sameSite("Strict")
-                .maxAge(Duration.ofMillis(jwtExpiration).getSeconds())
+                .maxAge(Duration.ofMillis(configFile.getJwtExpiration()).getSeconds())
                 .build();
     }
 
@@ -125,7 +120,7 @@ public class JwtServiceImpl implements JwtService {
     public String getJwtFromRequest(HttpServletRequest request) {
 
         // 1. try cookie
-        Cookie cookie = WebUtils.getCookie(request, jwtCookieName);
+        Cookie cookie = WebUtils.getCookie(request, configFile.getJwtCookieName());
         if (cookie != null && !cookie.getValue().isBlank())
             return cookie.getValue();
 
@@ -139,7 +134,7 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public ResponseCookie getCleanJwtCookie() {
-        return ResponseCookie.from(jwtCookieName, "")
+        return ResponseCookie.from(configFile.getJwtCookieName(), "")
                 .path("/")
                 .httpOnly(true)
                 .maxAge(0)
@@ -160,7 +155,7 @@ public class JwtServiceImpl implements JwtService {
     }
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(configFile.getSecretKey()));
     }
 
     /* ---------------------- Blacklist ---------------------- */

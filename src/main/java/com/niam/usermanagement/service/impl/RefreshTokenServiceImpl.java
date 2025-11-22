@@ -1,5 +1,6 @@
 package com.niam.usermanagement.service.impl;
 
+import com.niam.usermanagement.config.UMConfigFile;
 import com.niam.usermanagement.exception.TokenException;
 import com.niam.usermanagement.model.entities.RefreshToken;
 import com.niam.usermanagement.model.entities.User;
@@ -14,7 +15,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
@@ -35,12 +35,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-
-    @Value("${application.security.jwt.refresh-token.expiration:1296000000}")
-    private long refreshExpiration; // ms
-
-    @Value("${application.security.jwt.refresh-token.cookie-name:refresh-token}")
-    private String refreshTokenName;
+    private final UMConfigFile configFile;
 
     @Override
     @Transactional("transactionManager")
@@ -52,7 +47,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .revoked(false)
                 .user(user)
                 .token(tokenValue)
-                .expiryDate(Instant.now().plusMillis(refreshExpiration))
+                .expiryDate(Instant.now().plusMillis(configFile.getRefreshExpiration()))
                 .build();
         return refreshTokenRepository.save(refreshToken);
     }
@@ -124,9 +119,9 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     public ResponseCookie generateRefreshTokenCookie(String token) {
-        return ResponseCookie.from(refreshTokenName, token)
+        return ResponseCookie.from(configFile.getRefreshTokenName(), token)
                 .path("/")
-                .maxAge(refreshExpiration / 1000)
+                .maxAge(configFile.getRefreshExpiration() / 1000)
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("Strict")
@@ -135,7 +130,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     public String getRefreshTokenFromCookies(HttpServletRequest request) {
-        Cookie cookie = WebUtils.getCookie(request, refreshTokenName);
+        Cookie cookie = WebUtils.getCookie(request, configFile.getRefreshTokenName());
         return cookie != null ? cookie.getValue() : "";
     }
 
@@ -156,7 +151,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     public ResponseCookie getCleanRefreshTokenCookie() {
-        return ResponseCookie.from(refreshTokenName, "")
+        return ResponseCookie.from(configFile.getRefreshTokenName(), "")
                 .path("/")
                 .httpOnly(true)
                 .maxAge(0)
