@@ -2,14 +2,14 @@ package com.niam.usermanagement.service;
 
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.payload.request.UserDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
-
-import java.util.List;
 
 public interface UserService {
     Long getCurrentUserId(Authentication authentication);
 
-    List<User> getAllUsers();
+    Page<User> getAllUsers(PageRequest pageRequest);
 
     User loadUserByUsername(String username);
 

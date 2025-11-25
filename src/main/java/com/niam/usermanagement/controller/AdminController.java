@@ -10,9 +10,12 @@ import com.niam.usermanagement.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @Tag(name = "User Management Admin", description = "Admin endpoints")
 @RestController
@@ -49,7 +52,11 @@ public class AdminController {
 
     @GetMapping("/users")
     @HasPermission({PRIVILEGE.USER_MANAGE, PRIVILEGE.USER_READ})
-    public ResponseEntity<ServiceResponse> getAllUsers() {
-        return responseEntityUtil.ok(userService.getAllUsers());
+    public ResponseEntity<ServiceResponse> getAllUsers(@RequestParam Map<String, Object> requestParams) {
+        Object pageObj = requestParams.remove("page");
+        Object sizeObj = requestParams.remove("size");
+        int page = (pageObj == null ? 0 : Integer.parseInt(((String) pageObj)));
+        int size = (sizeObj == null ? 20 : Integer.parseInt(((String) sizeObj)));
+        return responseEntityUtil.ok(userService.getAllUsers(PageRequest.of(page, size)));
     }
 }
