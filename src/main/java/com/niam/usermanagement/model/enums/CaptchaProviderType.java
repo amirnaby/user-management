@@ -1,5 +1,8 @@
 package com.niam.usermanagement.model.enums;
 
+/**
+ * Available Captcha Provide channels.
+ */
 public enum CaptchaProviderType {
     LOCAL("localCaptchaProvider"),
     DEV("devCaptchaProvider");

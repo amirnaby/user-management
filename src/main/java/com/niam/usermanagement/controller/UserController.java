@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +22,7 @@ public class UserController {
     private final UserService userService;
     private final ResponseEntityUtil responseEntityUtil;
 
+    @PreAuthorize("isAuthenticated()")
     @PutMapping
     public ResponseEntity<ServiceResponse> updateProfile(@Valid @RequestBody UserDTO request) {
         return responseEntityUtil.ok(userService.updateProfile(request));

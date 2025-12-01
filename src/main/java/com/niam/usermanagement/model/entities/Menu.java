@@ -24,9 +24,16 @@ public class Menu extends Auditable {
     private String icon;
     @Column(nullable = false, unique = true)
     private String route;
+
     @Builder.Default
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "um_menu_permissions", joinColumns = @JoinColumn(name = "menu_id"))
-    @Column(name = "permission")
+    @Column(name = "permissions")
     private Set<String> permissions = new HashSet<>();
+
+    @Builder.Default
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "um_menu_roles", joinColumns = @JoinColumn(name = "role_id"))
+    @Column(name = "roles")
+    private Set<String> roles = new HashSet<>();
 }

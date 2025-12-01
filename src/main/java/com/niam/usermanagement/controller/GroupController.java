@@ -20,17 +20,20 @@ public class GroupController {
     private final GroupService groupService;
     private final ResponseEntityUtil responseEntityUtil;
 
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @PostMapping
     public ResponseEntity<ServiceResponse> create(@RequestBody UserGroup dto) {
         UserGroup created = groupService.createGroup(dto.getName(), dto.getDescription());
         return responseEntityUtil.ok(created);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @PostMapping("/{groupId}/roles/{roleId}")
     public ResponseEntity<ServiceResponse> assignRole(@PathVariable Long groupId, @PathVariable Long roleId) {
         return responseEntityUtil.ok(groupService.assignRole(groupId, roleId));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @PostMapping("/{groupId}/members/{userId}")
     public ResponseEntity<ServiceResponse> addMember(@PathVariable Long groupId, @PathVariable Long userId) {
         return responseEntityUtil.ok(groupService.addMember(groupId, userId));

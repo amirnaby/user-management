@@ -7,6 +7,7 @@ import com.niam.usermanagement.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -22,6 +23,7 @@ public class DeviceController {
     private final JwtService jwtService;
     private final ResponseEntityUtil responseEntityUtil;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ServiceResponse> list(HttpServletRequest request) {
         String token = jwtService.getJwtFromRequest(request);
@@ -29,6 +31,7 @@ public class DeviceController {
         return responseEntityUtil.ok(deviceService.listSessions(userId));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/revoke/{id}")
     public ResponseEntity<ServiceResponse> revoke(@PathVariable Long id, HttpServletRequest request) {
         String token = jwtService.getJwtFromRequest(request);

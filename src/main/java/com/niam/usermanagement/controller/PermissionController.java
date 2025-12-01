@@ -26,6 +26,7 @@ public class PermissionController {
     /**
      * Returns permissions for the current authenticated user.
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ServiceResponse> getPermissions(Authentication authentication) {
         Long userId = userService.getCurrentUserId(authentication);

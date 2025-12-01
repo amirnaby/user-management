@@ -24,22 +24,22 @@ public class RoleController {
     private final ResponseEntityUtil responseEntityUtil;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ResponseEntity<ServiceResponse> create(@RequestBody Role dto) {
         Role r = roleService.createRole(dto.getName(), dto.getDescription());
         return responseEntityUtil.ok(r);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @PutMapping("/{roleName}/permissions")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ServiceResponse> assignPermissions(
             @PathVariable String roleName,
             @RequestBody List<String> permissionCodes) {
         return responseEntityUtil.ok(roleService.assignPermissions(roleName, permissionCodes));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @DeleteMapping("/roles/{roleName}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ServiceResponse> deleteRole(@PathVariable String roleName) {
         roleService.deleteRole(roleName);
         return responseEntityUtil.ok("Role has been deleted");
