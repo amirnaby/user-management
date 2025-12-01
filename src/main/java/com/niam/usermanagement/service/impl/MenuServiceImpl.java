@@ -3,7 +3,6 @@ package com.niam.usermanagement.service.impl;
 import com.niam.common.exception.EntityNotFoundException;
 import com.niam.common.exception.ResultResponseStatus;
 import com.niam.usermanagement.model.entities.Menu;
-import com.niam.usermanagement.model.entities.Permission;
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.repository.MenuRepository;
 import com.niam.usermanagement.service.JwtService;
@@ -12,6 +11,7 @@ import com.niam.usermanagement.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,12 +31,30 @@ public class MenuServiceImpl implements MenuService {
     public List<Menu> getMenusForCurrentUser(HttpServletRequest request) {
         String token = jwtService.getJwtFromRequest(request);
         if (token == null) return List.of();
+
         String username = jwtService.extractUsername(token);
         User user = userService.loadUserByUsername(username);
-        Set<String> userPermissions = getUserPermissions(user);
+
+        Set<String> userAuthorities = user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
+
         return menuRepository.findAll().stream()
-                .filter(menu -> menu.getPermissions().stream()
-                        .anyMatch(userPermissions::contains))
+                .filter(menu -> {
+                    boolean noRestrictions =
+                            (menu.getPermissions() == null || menu.getPermissions().isEmpty())
+                                    && (menu.getRoles() == null || menu.getRoles().isEmpty());
+
+                    if (noRestrictions) return true;
+
+                    boolean hasPermission = menu.getPermissions() != null &&
+                            menu.getPermissions().stream().anyMatch(userAuthorities::contains);
+
+                    boolean hasRole = menu.getRoles() != null &&
+                            menu.getRoles().stream().anyMatch(userAuthorities::contains);
+
+                    return hasPermission || hasRole;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -53,13 +71,6 @@ public class MenuServiceImpl implements MenuService {
     @Override
     public List<Menu> getAllMenus() {
         return menuRepository.findAll();
-    }
-
-    private Set<String> getUserPermissions(User user) {
-        return user.getRoles().stream()
-                .flatMap(role -> role.getPermissions().stream())
-                .map(Permission::getCode)
-                .collect(Collectors.toSet());
     }
 
     @Transactional

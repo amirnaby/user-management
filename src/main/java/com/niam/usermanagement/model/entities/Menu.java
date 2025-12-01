@@ -33,7 +33,7 @@ public class Menu extends Auditable {
 
     @Builder.Default
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "um_menu_roles", joinColumns = @JoinColumn(name = "role_id"))
+    @CollectionTable(name = "um_menu_roles", joinColumns = @JoinColumn(name = "menu_id"))
     @Column(name = "roles")
     private Set<String> roles = new HashSet<>();
 }
