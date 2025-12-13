@@ -5,6 +5,7 @@ import com.niam.common.exception.IllegalArgumentException;
 import com.niam.common.exception.ValidationException;
 import com.niam.usermanagement.config.UMConfigFile;
 import com.niam.usermanagement.exception.AuthenticationException;
+import com.niam.usermanagement.exception.UserNotFoundException;
 import com.niam.usermanagement.model.entities.PasswordHistory;
 import com.niam.usermanagement.model.entities.Role;
 import com.niam.usermanagement.model.entities.User;
@@ -111,7 +112,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (configFile.isPasswordlessEnabled()) userService.loadUserByUsername(username);
             else
                 authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, request.getPassword()));
-        } catch (BadCredentialsException | EntityNotFoundException ex) {
+        } catch (BadCredentialsException | UserNotFoundException ex) {
             boolean ipStillAllowed = attemptService.registerFailureForIp(ip);
             boolean userStillAllowed = attemptService.registerFailureForUsername(username);
 
@@ -203,7 +204,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String userAgent = RequestUtils.getUserAgent(servletRequest);
 
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new ValidationException("Passwords do not match");

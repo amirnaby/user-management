@@ -1,10 +1,7 @@
 package com.niam.usermanagement.model.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
@@ -27,6 +24,7 @@ public class RefreshToken extends Auditable {
     private String token;
     @Column(nullable = false)
     private Instant expiryDate;
+    @Builder.Default
     @Column(nullable = false)
     private boolean revoked = false;
 }

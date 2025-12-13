@@ -83,7 +83,10 @@ public class AuthenticationController {
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/refresh-token")
     public ResponseEntity<ServiceResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
-        return responseEntityUtil.ok(refreshTokenService.generateNewToken(request));
+        RefreshTokenResponse response = refreshTokenService.generateNewToken(request);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(response.getAccessToken()).toString());
+        return responseEntityUtil.ok(response, headers);
     }
 
     /**

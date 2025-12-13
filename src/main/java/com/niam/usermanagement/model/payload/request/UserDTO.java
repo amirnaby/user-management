@@ -41,5 +41,6 @@ public class UserDTO {
      * For safety in production, registration with privilege roles should be prevented,
      * or system should ignore roleName and always assign default.
      */
+    @Builder.Default
     private Set<String> roleNames = new HashSet<>();
 }

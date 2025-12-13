@@ -4,10 +4,11 @@ import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.payload.request.UserDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.core.Authentication;
 
 public interface UserService {
-    Long getCurrentUserId(Authentication authentication);
+    User getCurrentUser();
+
+    UserDTO getCurrentUserDTO();
 
     Page<User> getAllUsers(PageRequest pageRequest);
 

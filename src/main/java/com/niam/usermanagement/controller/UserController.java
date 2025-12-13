@@ -9,18 +9,21 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "User Profile", description = "User endpoints")
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/current-user")
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
     private final ResponseEntityUtil responseEntityUtil;
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping
+    public ResponseEntity<ServiceResponse> userInfo() {
+        return responseEntityUtil.ok(userService.getCurrentUserDTO());
+    }
 
     @PreAuthorize("isAuthenticated()")
     @PutMapping

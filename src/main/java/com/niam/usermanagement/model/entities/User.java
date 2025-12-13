@@ -58,6 +58,7 @@ public class User extends Auditable implements UserDetails {
     @Column(nullable = false, unique = true)
     private String mobile;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean enabled = true;
 
@@ -75,13 +76,14 @@ public class User extends Auditable implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "group_id"))
     private Set<UserGroup> groups = new HashSet<>();
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean accountLocked = false;
-
 
     @Column
     private Instant lockUntil;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean accountNonLocked = false;
 
@@ -91,6 +93,7 @@ public class User extends Auditable implements UserDetails {
     @Column
     private boolean mustChangePassword;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean accountNonExpired = false;
 

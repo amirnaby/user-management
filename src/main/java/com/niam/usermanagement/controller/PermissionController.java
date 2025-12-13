@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,8 +27,8 @@ public class PermissionController {
      */
     @PreAuthorize("isAuthenticated()")
     @GetMapping
-    public ResponseEntity<ServiceResponse> getPermissions(Authentication authentication) {
-        Long userId = userService.getCurrentUserId(authentication);
+    public ResponseEntity<ServiceResponse> getPermissions() {
+        Long userId = userService.getCurrentUser().getId();
         List<Permission> perms = permissionService.getPermissionsForUser(userId);
         return responseEntityUtil.ok(perms);
     }
