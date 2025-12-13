@@ -26,6 +26,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -112,7 +113,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (configFile.isPasswordlessEnabled()) userService.loadUserByUsername(username);
             else
                 authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, request.getPassword()));
-        } catch (BadCredentialsException | UserNotFoundException ex) {
+        } catch (BadCredentialsException | UsernameNotFoundException ex) {
             boolean ipStillAllowed = attemptService.registerFailureForIp(ip);
             boolean userStillAllowed = attemptService.registerFailureForUsername(username);
 
@@ -126,13 +127,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 throw new AuthenticationException("Too many login attempts from your IP");
             }
 
-            throw ex;
+            throw new AuthenticationException("Invalid username or password");
         }
 
         attemptService.registerSuccess(username, ip);
 
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new AuthenticationException("Invalid username or password."));
+                .orElseThrow(() -> new AuthenticationException("Invalid username or password"));
 
         if (!user.isEnabled()) {
             throw new AuthenticationException("Account is disabled");

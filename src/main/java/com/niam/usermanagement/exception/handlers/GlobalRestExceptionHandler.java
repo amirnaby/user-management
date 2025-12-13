@@ -7,7 +7,6 @@ import com.niam.usermanagement.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,8 +17,8 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalRestExceptionHandler {
-    @ExceptionHandler({TokenException.class, AuthenticationException.class, UserNotFoundException.class, BadCredentialsException.class})
-    public ResponseEntity<ErrorResponse> handleToken(TokenException ex) {
+    @ExceptionHandler({TokenException.class, AuthenticationException.class, UserNotFoundException.class,})
+    public ResponseEntity<ErrorResponse> handleToken(Exception ex) {
         ErrorResponse err = ErrorResponse.builder()
                 .responseCode(HttpStatus.UNAUTHORIZED.value())
                 .reasonCode(HttpStatus.UNAUTHORIZED.series().value())
