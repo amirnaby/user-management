@@ -117,14 +117,14 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Transactional("transactionManager")
     @Override
-    public void updateRoles(String username, Set<String> newRoleNames) {
+    public User updateRoles(String username, Set<String> roleNames) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new EntityNotFoundException("User with username " + username + " not found"));
 
-        if (newRoleNames == null || newRoleNames.isEmpty()) {
+        if (roleNames == null || roleNames.isEmpty()) {
             user.getRoles().clear();
         } else {
-            Set<Role> newRoles = newRoleNames.stream()
+            Set<Role> newRoles = roleNames.stream()
                     .map(roleName -> roleRepository.findByName(roleName)
                             .orElseThrow(() -> new EntityNotFoundException("Role " + roleName + " not found")))
                     .collect(Collectors.toSet());
@@ -133,6 +133,6 @@ public class UserServiceImpl implements UserDetailsService, UserService {
             user.getRoles().addAll(newRoles);
         }
 
-        userRepository.save(user);
+        return userRepository.save(user);
     }
 }

@@ -28,5 +28,5 @@ public interface UserService {
 
     User updateProfile(UserDTO request);
 
-    void updateRoles(String username, Set<String> newRoleNames);
+    User updateRoles(String username, Set<String> roleNames);
 }

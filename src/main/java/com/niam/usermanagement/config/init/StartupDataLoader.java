@@ -49,22 +49,18 @@ public class StartupDataLoader implements ApplicationRunner {
         // ---------------------------------------------------------
         for (ROLE roleEnum : ROLE.values()) {
             String roleName = "ROLE_" + roleEnum.name(); // ROLE_ADMIN, ROLE_USER ...
-
             if (!roleRepository.existsByName(roleName)) {
-
                 Set<Permission> permissions = roleEnum.getPRIVILEGES()
                         .stream()
                         .map(pr -> permissionRepository.findByCode(pr.getCode())
                                 .orElseThrow(() -> new IllegalStateException("Permission not found: " + pr)))
                         .collect(Collectors.toSet());
 
-                Role role = Role.builder()
+                roleRepository.save(Role.builder()
                         .name(roleName)
                         .description(roleName)
                         .permissions(permissions)
-                        .build();
-
-                roleRepository.save(role);
+                        .build());
             }
         }
 

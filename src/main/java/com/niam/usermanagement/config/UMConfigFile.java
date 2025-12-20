@@ -78,9 +78,4 @@ public class UMConfigFile {
 
     @Value("${app.permission.cache.ttl.seconds:300}")
     private long permissionTtlSeconds;
-
-    @Value("${app.default-pagination.size:20}")
-    private int defaultPageSize;
-    @Value("${app.default-pagination.sort-field:id}")
-    private String defaultPageSortField;
 }

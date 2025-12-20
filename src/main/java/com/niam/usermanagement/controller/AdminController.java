@@ -7,15 +7,16 @@ import com.niam.usermanagement.annotation.StrongPassword;
 import com.niam.usermanagement.model.enums.PRIVILEGE;
 import com.niam.usermanagement.model.payload.request.UserDTO;
 import com.niam.usermanagement.service.UserService;
+import com.niam.common.utils.PaginationUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Set;
 
 @Tag(name = "User Management Admin", description = "Admin endpoints")
 @RestController
@@ -23,6 +24,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdminController {
     private final UserService userService;
+    private final PaginationUtils paginationUtils;
     private final ResponseEntityUtil responseEntityUtil;
 
     @PostMapping("/users")
@@ -44,6 +46,12 @@ public class AdminController {
         return responseEntityUtil.ok("User deleted successfully");
     }
 
+    @PutMapping("/users/{username}/roles")
+    @HasPermission(PRIVILEGE.USER_MANAGE)
+    public ResponseEntity<ServiceResponse> updateRoles(@PathVariable String username, @RequestBody Set<String> roleNames) {
+        return responseEntityUtil.ok(userService.updateRoles(username, roleNames));
+    }
+
     @GetMapping("/users/{username}")
     @HasPermission({PRIVILEGE.USER_MANAGE, PRIVILEGE.USER_READ})
     public ResponseEntity<ServiceResponse> getUser(@PathVariable String username) {
@@ -53,10 +61,6 @@ public class AdminController {
     @GetMapping("/users")
     @HasPermission({PRIVILEGE.USER_MANAGE, PRIVILEGE.USER_READ})
     public ResponseEntity<ServiceResponse> getAllUsers(@RequestParam Map<String, Object> requestParams) {
-        Object pageObj = requestParams.remove("page");
-        Object sizeObj = requestParams.remove("size");
-        int page = (pageObj == null ? 0 : Integer.parseInt(((String) pageObj)));
-        int size = (sizeObj == null ? 20 : Integer.parseInt(((String) sizeObj)));
-        return responseEntityUtil.ok(userService.getAllUsers(PageRequest.of(page, size)));
+        return responseEntityUtil.ok(userService.getAllUsers(paginationUtils.pageHandler(requestParams)));
     }
 }
