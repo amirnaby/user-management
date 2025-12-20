@@ -46,7 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
-        String jwt = jwtService.getJwtFromRequest(request);
+        String jwt = jwtService.getJwtFromRequest();
         String authHeader = request.getHeader("Authorization");
 
         if (jwt != null && tokenBlacklistService.isBlacklisted(jwt)) {

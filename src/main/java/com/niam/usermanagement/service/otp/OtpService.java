@@ -15,6 +15,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.security.SecureRandom;
 
@@ -32,9 +34,11 @@ public class OtpService {
     /**
      * Send login OTP to user using configured provider.
      */
-    public void sendLoginOtp(String username, HttpServletRequest request) {
+    public void sendLoginOtp(String username) {
         if (!configFile.isOtpEnabled()) throw new NotFoundException("OTP is disabled");
 
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder
+                .currentRequestAttributes()).getRequest();
         String ip = authUtils.extractClientIp(request);
         otpRateLimitService.checkLimitForIp(ip);
         otpRateLimitService.checkLimitForUsername(username);

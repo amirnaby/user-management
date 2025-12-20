@@ -19,6 +19,8 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.util.WebUtils;
 
 import java.time.Instant;
@@ -129,7 +131,9 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     @Override
-    public String getRefreshTokenFromCookies(HttpServletRequest request) {
+    public String getRefreshTokenFromCookies() {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder
+                .currentRequestAttributes()).getRequest();
         Cookie cookie = WebUtils.getCookie(request, configFile.getRefreshTokenName());
         return cookie != null ? cookie.getValue() : "";
     }

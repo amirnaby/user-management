@@ -20,6 +20,7 @@ import com.niam.usermanagement.model.repository.UserRepository;
 import com.niam.usermanagement.service.*;
 import com.niam.usermanagement.utils.AuthUtils;
 import com.niam.usermanagement.utils.RequestUtils;
+import com.niam.usermanagement.utils.UserDTOMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -30,10 +31,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional("transactionManager")
@@ -54,6 +56,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuditLogService auditLogService;
     private final UMConfigFile configFile;
     private final AuthUtils authUtils;
+    private final UserDTOMapper userDTOMapper;
 
 
     @Override
@@ -81,22 +84,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         var jwt = jwtService.generateToken(user);
         var refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
-        List<String> roles = user.getRoles().stream()
-                .map(Role::getName)
-                .collect(Collectors.toList());
-
         return AuthenticationResponse.builder()
                 .accessToken(jwt)
-                .username(user.getUsername())
+                .user(userDTOMapper.userToUserDTO(user))
                 .id(user.getId())
                 .refreshToken(refreshToken.getToken())
-                .roles(roles)
                 .tokenType("BEARER")
                 .build();
     }
 
     @Override
-    public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletRequest servletRequest) {
+    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+        HttpServletRequest servletRequest = ((ServletRequestAttributes) RequestContextHolder
+                .currentRequestAttributes()).getRequest();
         String ip = RequestUtils.getClientIp(servletRequest);
         String userAgent = RequestUtils.getUserAgent(servletRequest);
         String username = request.getUsername();
@@ -155,13 +155,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String jwt = jwtService.generateToken(user);
         var refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
-        List<String> roles = user.getRoles().stream().map(Role::getName).collect(Collectors.toList());
         auditLogService.log(user.getId(), user.getUsername(), "LOGIN_SUCCESS", ip, userAgent);
 
         return AuthenticationResponse.builder()
+                .user(userDTOMapper.userToUserDTO(user))
                 .accessToken(jwt)
-                .roles(roles)
-                .username(user.getUsername())
                 .id(user.getId())
                 .refreshToken(refreshToken.getToken())
                 .tokenType("BEARER")
@@ -169,7 +167,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public void changePassword(ChangePasswordRequest request, HttpServletRequest servletRequest) {
+    public void changePassword(ChangePasswordRequest request) {
+        HttpServletRequest servletRequest = ((ServletRequestAttributes) RequestContextHolder
+                .currentRequestAttributes()).getRequest();
         String ip = RequestUtils.getClientIp(servletRequest);
         String userAgent = RequestUtils.getUserAgent(servletRequest);
 
@@ -200,7 +200,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public void resetPassword(ResetPasswordRequest request, HttpServletRequest servletRequest) {
+    public void resetPassword(ResetPasswordRequest request) {
+        HttpServletRequest servletRequest = ((ServletRequestAttributes) RequestContextHolder
+                .currentRequestAttributes()).getRequest();
         String ip = RequestUtils.getClientIp(servletRequest);
         String userAgent = RequestUtils.getUserAgent(servletRequest);
 

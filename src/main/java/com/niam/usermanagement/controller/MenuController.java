@@ -4,7 +4,6 @@ import com.niam.common.model.response.ServiceResponse;
 import com.niam.common.utils.ResponseEntityUtil;
 import com.niam.usermanagement.model.entities.Menu;
 import com.niam.usermanagement.service.MenuService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,8 +20,8 @@ public class MenuController {
 
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/current")
-    public ResponseEntity<ServiceResponse> getMenusForCurrentUser(HttpServletRequest request) {
-        return responseEntityUtil.ok(menuService.getMenusForCurrentUser(request));
+    public ResponseEntity<ServiceResponse> getMenusForCurrentUser() {
+        return responseEntityUtil.ok(menuService.getMenusForCurrentUser());
     }
 
     @PreAuthorize("isAuthenticated()")

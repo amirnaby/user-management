@@ -5,16 +5,20 @@ import com.niam.usermanagement.model.payload.request.UserDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
+import java.util.Set;
+
 public interface UserService {
     User getCurrentUser();
 
     UserDTO getCurrentUserDTO();
 
+    User getUserByUsername(String username);
+
     Page<User> getAllUsers(PageRequest pageRequest);
 
     User loadUserByUsername(String username);
 
-    User createUser(UserDTO request);
+    User createUser(UserDTO userDTO);
 
     void updateUser(User user);
 
@@ -23,4 +27,6 @@ public interface UserService {
     void deleteUser(String username);
 
     User updateProfile(UserDTO request);
+
+    void updateRoles(String username, Set<String> newRoleNames);
 }

@@ -10,7 +10,6 @@ import com.niam.usermanagement.model.repository.UserRepository;
 import com.niam.usermanagement.service.JwtService;
 import com.niam.usermanagement.service.RefreshTokenService;
 import com.niam.usermanagement.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
@@ -18,9 +17,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,16 +38,18 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     }
 
     @Override
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username).orElseThrow(() -> new EntityNotFoundException("Invalid username"));
+    }
+
+    @Override
     public Page<User> getAllUsers(PageRequest pageRequest) {
         return userRepository.findAll(pageRequest);
     }
 
     @Override
     public User getCurrentUser() {
-        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attrs == null) return null;
-        HttpServletRequest request = attrs.getRequest();
-        String token = jwtService.getJwtFromRequest(request);
+        String token = jwtService.getJwtFromRequest();
         String username = jwtService.extractUsername(token);
         return loadUserByUsername(username);
     }
@@ -63,14 +63,14 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         return userDto;
     }
 
-    @Transactional("transactionManager")
+    @Transactional(value = "transactionManager", propagation = Propagation.REQUIRES_NEW)
     @Override
-    public User createUser(UserDTO request) {
+    public User createUser(UserDTO userDTO) {
         User user = new User();
-        BeanUtils.copyProperties(request, user, "roleName");
+        BeanUtils.copyProperties(userDTO, user, "roleName");
         Role role = roleRepository.findByName("ROLE_USER").orElseThrow(() -> new EntityNotFoundException("Role not found"));
         user.getRoles().add(role);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         return userRepository.save(user);
     }
 
@@ -113,5 +113,26 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         User currentUser = getCurrentUser();
         BeanUtils.copyProperties(request, currentUser, "username", "password", "roleNames");
         return userRepository.save(currentUser);
+    }
+
+    @Transactional("transactionManager")
+    @Override
+    public void updateRoles(String username, Set<String> newRoleNames) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User with username " + username + " not found"));
+
+        if (newRoleNames == null || newRoleNames.isEmpty()) {
+            user.getRoles().clear();
+        } else {
+            Set<Role> newRoles = newRoleNames.stream()
+                    .map(roleName -> roleRepository.findByName(roleName)
+                            .orElseThrow(() -> new EntityNotFoundException("Role " + roleName + " not found")))
+                    .collect(Collectors.toSet());
+
+            user.getRoles().clear();
+            user.getRoles().addAll(newRoles);
+        }
+
+        userRepository.save(user);
     }
 }

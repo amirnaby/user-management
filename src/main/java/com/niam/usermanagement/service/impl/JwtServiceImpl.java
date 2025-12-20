@@ -17,6 +17,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.util.WebUtils;
 
 import java.security.Key;
@@ -53,11 +55,6 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public String generateToken(User user) {
         return generateToken(user.getUsername(), user.getId());
-    }
-
-    @Override
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(userDetails.getUsername(), null);
     }
 
     private String generateToken(String username, Long userId) {
@@ -117,7 +114,9 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
-    public String getJwtFromRequest(HttpServletRequest request) {
+    public String getJwtFromRequest() {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder
+                .currentRequestAttributes()).getRequest();
 
         // 1. try cookie
         Cookie cookie = WebUtils.getCookie(request, configFile.getJwtCookieName());

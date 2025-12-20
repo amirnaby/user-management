@@ -8,7 +8,6 @@ import com.niam.usermanagement.model.repository.MenuRepository;
 import com.niam.usermanagement.service.JwtService;
 import com.niam.usermanagement.service.MenuService;
 import com.niam.usermanagement.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.core.GrantedAuthority;
@@ -28,8 +27,8 @@ public class MenuServiceImpl implements MenuService {
     private final JwtService jwtService;
 
     @Override
-    public List<Menu> getMenusForCurrentUser(HttpServletRequest request) {
-        String token = jwtService.getJwtFromRequest(request);
+    public List<Menu> getMenusForCurrentUser() {
+        String token = jwtService.getJwtFromRequest();
         if (token == null) return List.of();
 
         String username = jwtService.extractUsername(token);

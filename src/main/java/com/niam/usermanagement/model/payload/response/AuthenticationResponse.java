@@ -1,21 +1,19 @@
 package com.niam.usermanagement.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.niam.usermanagement.model.payload.request.UserDTO;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
-import java.util.List;
-
+@SuperBuilder
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuthenticationResponse {
     private Long id;
-    private String username;
-    private List<String> roles;
+    private UserDTO user;
     private boolean mustChangePassword;
     @JsonProperty("access_token")
     private String accessToken;

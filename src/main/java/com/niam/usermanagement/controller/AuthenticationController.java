@@ -14,7 +14,6 @@ import com.niam.usermanagement.service.captcha.CaptchaService;
 import com.niam.usermanagement.service.otp.OtpService;
 import com.niam.usermanagement.service.otp.provider.OtpProvider;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.groups.Default;
@@ -25,6 +24,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import java.util.Objects;
 
 /**
  * Authentication and session-related endpoints (login, register, OTP, refresh token, logout).
@@ -49,7 +52,8 @@ public class AuthenticationController {
      */
     @PreAuthorize("isAnonymous()")
     @PostMapping("/register")
-    public ResponseEntity<ServiceResponse> register(@Validated({Default.class, StrongPassword.class}) @RequestBody UserDTO request) {
+    public ResponseEntity<ServiceResponse> register(
+            @Validated({Default.class, StrongPassword.class}) @RequestBody UserDTO request) {
         AuthenticationResponse resp = authenticationService.register(request);
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(resp.getAccessToken()).toString());
@@ -63,10 +67,9 @@ public class AuthenticationController {
     @PreAuthorize("isAnonymous()")
     @PostMapping("/login")
     public ResponseEntity<ServiceResponse> authenticate(
-            @Validated({Default.class, StrongPassword.class}) @RequestBody AuthenticationRequest request,
-            HttpServletRequest servletRequest) {
+            @Validated({Default.class, StrongPassword.class}) @RequestBody AuthenticationRequest request) {
         if (configFile.isOtpEnabled()) throw new NotFoundException("Use OTP login");
-        return loginProcess(request, servletRequest);
+        return loginProcess(request);
     }
 
     /**
@@ -94,8 +97,8 @@ public class AuthenticationController {
      */
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/refresh-token-cookie")
-    public ResponseEntity<ServiceResponse> refreshTokenCookie(HttpServletRequest request) {
-        String refreshToken = refreshTokenService.getRefreshTokenFromCookies(request);
+    public ResponseEntity<ServiceResponse> refreshTokenCookie() {
+        String refreshToken = refreshTokenService.getRefreshTokenFromCookies();
         RefreshTokenResponse response = refreshTokenService.generateNewToken(new RefreshTokenRequest(refreshToken));
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(response.getAccessToken()).toString());
@@ -107,17 +110,20 @@ public class AuthenticationController {
      */
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/logout")
-    public ResponseEntity<ServiceResponse> logout(HttpServletRequest request, HttpServletResponse response) {
-        String accessToken = jwtService.getJwtFromRequest(request);
+    public ResponseEntity<ServiceResponse> logout() {
+        String accessToken = jwtService.getJwtFromRequest();
         if (accessToken != null) tokenBlacklistService.blacklistToken(accessToken);
 
-        String refreshToken = refreshTokenService.getRefreshTokenFromCookies(request);
+        String refreshToken = refreshTokenService.getRefreshTokenFromCookies();
         if (refreshToken != null && !refreshToken.isBlank()) {
             refreshTokenService.deleteByToken(refreshToken);
         }
 
-        response.addHeader(HttpHeaders.SET_COOKIE, jwtService.getCleanJwtCookie().toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenService.getCleanRefreshTokenCookie().toString());
+        HttpServletResponse response = ((ServletRequestAttributes) RequestContextHolder
+                .currentRequestAttributes()).getResponse();
+
+        Objects.requireNonNull(response).addHeader(HttpHeaders.SET_COOKIE, jwtService.getCleanJwtCookie().toString());
+        Objects.requireNonNull(response).addHeader(HttpHeaders.SET_COOKIE, refreshTokenService.getCleanRefreshTokenCookie().toString());
         return responseEntityUtil.ok("Logged out");
     }
 
@@ -126,9 +132,8 @@ public class AuthenticationController {
      */
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/change-password")
-    public ResponseEntity<ServiceResponse> changePassword(@Valid @RequestBody ChangePasswordRequest request,
-                                                          HttpServletRequest servletRequest) {
-        authenticationService.changePassword(request, servletRequest);
+    public ResponseEntity<ServiceResponse> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        authenticationService.changePassword(request);
         return responseEntityUtil.ok("Password changed successfully");
     }
 
@@ -137,9 +142,8 @@ public class AuthenticationController {
      */
     @PostMapping("/reset-password")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ServiceResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request,
-                                                         HttpServletRequest servletRequest) {
-        authenticationService.resetPassword(request, servletRequest);
+    public ResponseEntity<ServiceResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authenticationService.resetPassword(request);
         return responseEntityUtil.ok("Password reset successfully");
     }
 
@@ -148,8 +152,8 @@ public class AuthenticationController {
      */
     @PreAuthorize("isAnonymous()")
     @PostMapping("/send-otp")
-    public ResponseEntity<ServiceResponse> sendOtp(@RequestParam String username, HttpServletRequest request) {
-        otpService.sendLoginOtp(username, request);
+    public ResponseEntity<ServiceResponse> sendOtp(@RequestParam String username) {
+        otpService.sendLoginOtp(username);
         return responseEntityUtil.ok("OTP sent");
     }
 
@@ -159,25 +163,24 @@ public class AuthenticationController {
     @PreAuthorize("isAnonymous()")
     @PostMapping("/login-otp")
     public ResponseEntity<ServiceResponse> loginOtp(
-            @Validated({Default.class, StrongPassword.class, OtpProvider.class}) @RequestBody AuthenticationRequest authenticationRequest,
-            HttpServletRequest request) {
+            @Validated({Default.class, StrongPassword.class, OtpProvider.class})
+            @RequestBody AuthenticationRequest authenticationRequest) {
         if (configFile.isPasswordlessEnabled()) throw new NotFoundException("Use passwordless login");
         if (!otpService.verifyOtp(authenticationRequest.getUsername(), authenticationRequest.getOtp())) {
             throw new AuthenticationException("Invalid or expired OTP");
         }
-        return loginProcess(authenticationRequest, request);
+        return loginProcess(authenticationRequest);
     }
 
     @PreAuthorize("isAnonymous()")
     @PostMapping("/passwordless/login")
     public ResponseEntity<ServiceResponse> passwordlessLogin(
-            @Validated({Default.class, OtpProvider.class}) @RequestBody AuthenticationRequest authenticationRequest,
-            HttpServletRequest request) {
+            @Validated({Default.class, OtpProvider.class}) @RequestBody AuthenticationRequest authenticationRequest) {
         if (!configFile.isPasswordlessEnabled()) throw new NotFoundException("Use OTP login");
         if (!otpService.verifyOtp(authenticationRequest.getUsername(), authenticationRequest.getOtp())) {
             throw new AuthenticationException("Invalid or expired OTP");
         }
-        return loginProcess(authenticationRequest, request);
+        return loginProcess(authenticationRequest);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -187,8 +190,8 @@ public class AuthenticationController {
         return responseEntityUtil.ok("unlocked");
     }
 
-    private ResponseEntity<ServiceResponse> loginProcess(AuthenticationRequest request, HttpServletRequest servletRequest) {
-        AuthenticationResponse resp = authenticationService.authenticate(request, servletRequest);
+    private ResponseEntity<ServiceResponse> loginProcess(AuthenticationRequest request) {
+        AuthenticationResponse resp = authenticationService.authenticate(request);
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(resp.getAccessToken()).toString());
         headers.add(HttpHeaders.SET_COOKIE, refreshTokenService.generateRefreshTokenCookie(resp.getRefreshToken()).toString());

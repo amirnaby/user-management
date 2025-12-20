@@ -4,7 +4,6 @@ import com.niam.usermanagement.model.entities.RefreshToken;
 import com.niam.usermanagement.model.entities.User;
 import com.niam.usermanagement.model.payload.request.RefreshTokenRequest;
 import com.niam.usermanagement.model.payload.response.RefreshTokenResponse;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseCookie;
 
 import java.util.Optional;
@@ -22,7 +21,7 @@ public interface RefreshTokenService {
 
     ResponseCookie generateRefreshTokenCookie(String token);
 
-    String getRefreshTokenFromCookies(HttpServletRequest request);
+    String getRefreshTokenFromCookies();
 
     void deleteByToken(String token);
 
