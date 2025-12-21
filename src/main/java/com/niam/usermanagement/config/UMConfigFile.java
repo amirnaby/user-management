@@ -7,6 +7,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @Data
 public class UMConfigFile {
+    @Value("${spring.profiles.active:sec}")
+    private String activeProfile;
+
     @Value("${app.captcha.enabled:false}")
     private boolean captchaEnabled;
     @Value("${app.captcha.provider:LOCAL}")

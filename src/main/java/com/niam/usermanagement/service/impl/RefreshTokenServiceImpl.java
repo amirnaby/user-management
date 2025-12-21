@@ -125,7 +125,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .path("/")
                 .maxAge(configFile.getRefreshExpiration() / 1000)
                 .httpOnly(true)
-                .secure(true)
+                .secure(!"dev".equals(configFile.getActiveProfile()))
                 .sameSite("Strict")
                 .build();
     }

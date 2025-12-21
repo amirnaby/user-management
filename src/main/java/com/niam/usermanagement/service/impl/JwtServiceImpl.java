@@ -106,7 +106,7 @@ public class JwtServiceImpl implements JwtService {
     public ResponseCookie generateJwtCookie(String jwt) {
         return ResponseCookie.from(configFile.getJwtCookieName(), jwt)
                 .httpOnly(true)
-                .secure(true)
+                .secure(!"dev".equals(configFile.getActiveProfile()))
                 .path("/")
                 .sameSite("Strict")
                 .maxAge(Duration.ofMillis(configFile.getJwtExpiration()).getSeconds())
