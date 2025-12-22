@@ -33,7 +33,7 @@ public class AccountLockServiceImpl implements AccountLockService {
 
     @Override
     public void forceUnlock(String username) {
-        User user = userService.loadUserByUsername(username);
+        User user = userService.getUserByUsername(username);
         user.setAccountLocked(false);
         user.setLockUntil(null);
         userService.updateUser(user);

@@ -22,9 +22,9 @@ public interface UserService {
 
     void updateUser(User user);
 
-    User updateUser(String username, UserDTO request);
+    User updateUserDTO(String username, UserDTO request);
 
-    void deleteUser(String username);
+    void deactivateUser(String username);
 
     User updateProfile(UserDTO request);
 

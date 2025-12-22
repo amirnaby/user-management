@@ -3,7 +3,6 @@ package com.niam.usermanagement.service.impl;
 import com.niam.common.exception.EntityNotFoundException;
 import com.niam.usermanagement.model.entities.Permission;
 import com.niam.usermanagement.model.entities.Role;
-import com.niam.usermanagement.model.repository.PermissionRepository;
 import com.niam.usermanagement.model.repository.RoleRepository;
 import com.niam.usermanagement.model.repository.UserGroupRepository;
 import com.niam.usermanagement.model.repository.UserRepository;
@@ -14,34 +13,39 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class RoleServiceImpl implements RoleService {
     private final RoleRepository roleRepository;
-    private final PermissionRepository permissionRepository;
     private final UserRepository userRepository;
     private final UserGroupRepository userGroupRepository;
     private final PermissionService permissionService;
 
     @Override
-    public Role createRole(String name, String desc) {
-        Role r = Role.builder().name(name).description(desc).build();
-        return roleRepository.save(r);
+    public Role createRole(Role role) {
+        Set<Permission> permissions = role.getPermissions().stream()
+                .map(Permission::getCode)
+                .map(permissionService::getByCode)
+                .collect(Collectors.toSet());
+        role.setPermissions(permissions);
+        return roleRepository.save(role);
     }
 
     @Override
     @Transactional("transactionManager")
-    public Role assignPermissions(String roleName, List<String> permissionCodes) {
-        Role role = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new EntityNotFoundException("Role not found: " + roleName));
+    public Role updateRole(Role role) {
+        Role existingRole = getByName(role.getName());
 
-        List<Permission> permissions = permissionCodes.stream()
-                .map(code -> permissionRepository.findByCode(code)
-                        .orElseThrow(() -> new EntityNotFoundException("Permission not found: " + code)))
-                .toList();
+        Set<Permission> permissions = role.getPermissions().stream()
+                .map(Permission::getCode)
+                .map(permissionService::getByCode)
+                .collect(Collectors.toSet());
 
-        role.getPermissions().addAll(permissions);
+        role.setPermissions(permissions);
+        role.setDescription(existingRole.getDescription());
         Role saved = roleRepository.save(role);
         permissionService.invalidateAll();
         return saved;
@@ -50,8 +54,7 @@ public class RoleServiceImpl implements RoleService {
     @Transactional("transactionManager")
     @Override
     public void deleteRole(String roleName) {
-        Role role = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new EntityNotFoundException("Role not found: " + roleName));
+        Role role = getByName(roleName);
 
         userRepository.findAll().forEach(user -> {
             if (user.getRoles().remove(role)) {
@@ -67,5 +70,21 @@ public class RoleServiceImpl implements RoleService {
 
         permissionService.invalidateAll();
         roleRepository.delete(role);
+    }
+
+    @Override
+    public Role getByName(String name) {
+        return roleRepository.findByName(name)
+                .orElseThrow(() -> new EntityNotFoundException("Role not found: " + name));
+    }
+
+    @Override
+    public List<Role> getAll() {
+        return roleRepository.findAll();
+    }
+
+    @Override
+    public boolean existsByName(String name) {
+        return roleRepository.existsByName(name);
     }
 }

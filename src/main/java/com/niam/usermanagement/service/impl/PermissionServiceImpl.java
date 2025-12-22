@@ -27,6 +27,8 @@ public class PermissionServiceImpl implements PermissionService {
     private final Map<Long, Entry> cache = new ConcurrentHashMap<>();
     private final UMConfigFile configFile;
 
+    private record Entry(List<Permission> perms, Instant expiresAt) {}
+
     @Override
     public List<Permission> getPermissionsForUser(Long userId) {
         Entry e = cache.get(userId);
@@ -48,9 +50,6 @@ public class PermissionServiceImpl implements PermissionService {
         cache.clear();
     }
 
-    private record Entry(List<Permission> perms, Instant expiresAt) {
-    }
-
     @Override
     public Permission create(Permission permission) {
         return permissionRepository.save(permission);
@@ -59,8 +58,7 @@ public class PermissionServiceImpl implements PermissionService {
     @Transactional("transactionManager")
     @Override
     public void deletePermission(String permissionCode) {
-        Permission permission = permissionRepository.findByCode(permissionCode)
-                .orElseThrow(() -> new EntityNotFoundException("Permission not found: " + permissionCode));
+        Permission permission = getByCode(permissionCode);
 
         roleRepository.findAll().forEach(role -> {
             if (role.getPermissions().remove(permission)) {
@@ -72,4 +70,19 @@ public class PermissionServiceImpl implements PermissionService {
         permissionRepository.delete(permission);
     }
 
+    @Override
+    public Permission getByCode(String code) {
+        return permissionRepository.findByCode(code)
+                .orElseThrow(() -> new EntityNotFoundException("Permission not found: " + code));
+    }
+
+    @Override
+    public boolean existsByCode(String code) {
+        return permissionRepository.existsByCode(code);
+    }
+
+    @Override
+    public List<Permission> getAll() {
+        return permissionRepository.findAll();
+    }
 }

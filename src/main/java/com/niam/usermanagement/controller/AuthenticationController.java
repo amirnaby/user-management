@@ -3,9 +3,11 @@ package com.niam.usermanagement.controller;
 import com.niam.common.exception.NotFoundException;
 import com.niam.common.model.response.ServiceResponse;
 import com.niam.common.utils.ResponseEntityUtil;
+import com.niam.usermanagement.annotation.HasPermission;
 import com.niam.usermanagement.annotation.StrongPassword;
 import com.niam.usermanagement.config.UMConfigFile;
 import com.niam.usermanagement.exception.AuthenticationException;
+import com.niam.usermanagement.model.enums.PRIVILEGE;
 import com.niam.usermanagement.model.payload.request.*;
 import com.niam.usermanagement.model.payload.response.AuthenticationResponse;
 import com.niam.usermanagement.model.payload.response.RefreshTokenResponse;
@@ -19,7 +21,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -75,7 +76,7 @@ public class AuthenticationController {
     /**
      * Fetch a new captcha challenge.
      */
-    @GetMapping(value = "/captcha", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/captcha")
     public ResponseEntity<ServiceResponse> getCaptcha() {
         return responseEntityUtil.ok(captchaService.generate());
     }
@@ -140,8 +141,8 @@ public class AuthenticationController {
     /**
      * Reset another user's password (only admins).
      */
+    @HasPermission(PRIVILEGE.USER_MANAGE)
     @PostMapping("/reset-password")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ServiceResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authenticationService.resetPassword(request);
         return responseEntityUtil.ok("Password reset successfully");
@@ -183,7 +184,7 @@ public class AuthenticationController {
         return loginProcess(authenticationRequest);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('USER_MANAGE') and hasRole('ADMIN')")
     @PostMapping("/admin/unlock/{username}")
     public ResponseEntity<ServiceResponse> unlock(@PathVariable String username) {
         accountLockService.forceUnlock(username);

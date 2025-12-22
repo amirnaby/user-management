@@ -2,7 +2,9 @@ package com.niam.usermanagement.controller;
 
 import com.niam.common.model.response.ServiceResponse;
 import com.niam.common.utils.ResponseEntityUtil;
+import com.niam.usermanagement.annotation.HasPermission;
 import com.niam.usermanagement.model.entities.Permission;
+import com.niam.usermanagement.model.enums.PRIVILEGE;
 import com.niam.usermanagement.service.PermissionService;
 import com.niam.usermanagement.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,24 +29,28 @@ public class PermissionController {
      */
     @PreAuthorize("isAuthenticated()")
     @GetMapping
-    public ResponseEntity<ServiceResponse> getPermissions() {
+    public ResponseEntity<ServiceResponse> getPermissionsForUser() {
         Long userId = userService.getCurrentUser().getId();
         List<Permission> perms = permissionService.getPermissionsForUser(userId);
         return responseEntityUtil.ok(perms);
     }
 
+    @HasPermission(PRIVILEGE.PERMISSION_MANAGE)
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ServiceResponse> create(@RequestBody Permission dto) {
-        Permission p = permissionService.create(dto);
-        return responseEntityUtil.ok(p);
+    public ResponseEntity<ServiceResponse> createPermission(@RequestBody Permission permission) {
+        return responseEntityUtil.ok(permissionService.create(permission));
     }
 
-    @DeleteMapping("/permissions/{permissionCode}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @HasPermission(PRIVILEGE.PERMISSION_MANAGE)
+    @DeleteMapping("/{permissionCode}")
     public ResponseEntity<ServiceResponse> deletePermission(@PathVariable String permissionCode) {
         permissionService.deletePermission(permissionCode);
         return responseEntityUtil.ok("Permission has been deleted!");
     }
 
+    @HasPermission(PRIVILEGE.PERMISSION_MANAGE)
+    @GetMapping("/all")
+    public ResponseEntity<ServiceResponse> getAllPermissions() {
+        return responseEntityUtil.ok(permissionService.getAll());
+    }
 }

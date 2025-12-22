@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @SuperBuilder
 @Entity
-@Table(name = "um_permissions", uniqueConstraints = @UniqueConstraint(columnNames = "code"))
+@Table(name = "um_permissions")
 public class Permission extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

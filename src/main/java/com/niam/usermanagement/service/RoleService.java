@@ -5,9 +5,15 @@ import com.niam.usermanagement.model.entities.Role;
 import java.util.List;
 
 public interface RoleService {
-    Role createRole(String name, String desc);
+    Role createRole(Role role);
 
-    Role assignPermissions(String roleName, List<String> permissionCodes);
+    Role updateRole(Role role);
 
     void deleteRole(String roleName);
+
+    Role getByName(String name);
+
+    List<Role> getAll();
+
+    boolean existsByName(String name);
 }

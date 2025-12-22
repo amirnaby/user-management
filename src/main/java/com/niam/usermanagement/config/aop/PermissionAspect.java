@@ -21,13 +21,13 @@ public class PermissionAspect {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         var userPerms = auth.getAuthorities();
 
-        String[] required = Arrays.stream(hasPermission.value()).map(Object::toString).toArray(String[]::new);
+        String[] required = Arrays.stream(hasPermission.value()).toArray(String[]::new);
 
         boolean allowed;
         if (userPerms.contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) allowed = true;
         else allowed = userPerms.stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .anyMatch(Arrays.asList(required)::contains);
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(Arrays.asList(required)::contains);
 
         if (!allowed) {
             throw new AccessDeniedException("Permission denied. Required: " + Arrays.toString(required));

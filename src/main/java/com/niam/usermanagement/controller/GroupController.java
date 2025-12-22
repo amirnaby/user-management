@@ -2,11 +2,12 @@ package com.niam.usermanagement.controller;
 
 import com.niam.common.model.response.ServiceResponse;
 import com.niam.common.utils.ResponseEntityUtil;
+import com.niam.usermanagement.annotation.HasPermission;
 import com.niam.usermanagement.model.entities.UserGroup;
+import com.niam.usermanagement.model.enums.PRIVILEGE;
 import com.niam.usermanagement.service.GroupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -15,27 +16,25 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/groups")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class GroupController {
     private final GroupService groupService;
     private final ResponseEntityUtil responseEntityUtil;
 
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @HasPermission(PRIVILEGE.GROUP_MANAGE)
     @PostMapping
     public ResponseEntity<ServiceResponse> create(@RequestBody UserGroup dto) {
-        UserGroup created = groupService.createGroup(dto.getName(), dto.getDescription());
-        return responseEntityUtil.ok(created);
+        return responseEntityUtil.ok(groupService.createGroup(dto.getName(), dto.getDescription()));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
-    @PostMapping("/{groupId}/roles/{roleId}")
-    public ResponseEntity<ServiceResponse> assignRole(@PathVariable Long groupId, @PathVariable Long roleId) {
-        return responseEntityUtil.ok(groupService.assignRole(groupId, roleId));
+    @HasPermission(PRIVILEGE.GROUP_MANAGE)
+    @PostMapping("/{groupId}/roles/{roleName}")
+    public ResponseEntity<ServiceResponse> assignRole(@PathVariable Long groupId, @PathVariable String roleName) {
+        return responseEntityUtil.ok(groupService.assignRole(groupId, roleName));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
-    @PostMapping("/{groupId}/members/{userId}")
-    public ResponseEntity<ServiceResponse> addMember(@PathVariable Long groupId, @PathVariable Long userId) {
-        return responseEntityUtil.ok(groupService.addMember(groupId, userId));
+    @HasPermission(PRIVILEGE.GROUP_MANAGE)
+    @PostMapping("/{groupId}/members/{username}")
+    public ResponseEntity<ServiceResponse> addMember(@PathVariable Long groupId, @PathVariable String username) {
+        return responseEntityUtil.ok(groupService.addMember(groupId, username));
     }
 }

@@ -74,11 +74,10 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         return userRepository.save(user);
     }
 
-
     @Transactional("transactionManager")
     @Override
     public void updateUser(User updated) {
-        User existing = userRepository.findByUsername(updated.getUsername()).orElseThrow(() -> new UserNotFoundException("User not found"));
+        User existing = getUserByUsername(updated.getUsername());
         BeanUtils.copyProperties(updated, existing);
         if (updated.getRoles() != null && !updated.getRoles().isEmpty()) {
             Set<Role> newRoles = updated.getRoles().stream().map(n -> roleRepository.findByName(n.getName()).orElseThrow(() -> new EntityNotFoundException("Role not found: " + n))).collect(Collectors.toSet());
@@ -89,7 +88,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Transactional("transactionManager")
     @Override
-    public User updateUser(String username, UserDTO request) {
+    public User updateUserDTO(String username, UserDTO request) {
         User user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException("User not found"));
         BeanUtils.copyProperties(request, user, "roleNames");
         if (request.getRoleNames() != null && !request.getRoleNames().isEmpty()) {
@@ -101,10 +100,12 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Transactional("transactionManager")
     @Override
-    public void deleteUser(String username) {
+    public void deactivateUser(String username) {
         User user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException("User not found"));
         refreshTokenService.revokeTokensByUser(user);
-        userRepository.delete(user);
+        user.setAccountLocked(true);
+        user.setEnabled(false);
+        userRepository.save(user);
     }
 
     @Transactional("transactionManager")

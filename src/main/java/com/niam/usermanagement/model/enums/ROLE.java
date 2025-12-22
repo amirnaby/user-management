@@ -15,5 +15,5 @@ public enum ROLE {
     );
 
     @Getter
-    private final Set<PRIVILEGE> PRIVILEGES;
+    private final Set<String> PRIVILEGES;
 }

@@ -14,4 +14,10 @@ public interface PermissionService {
     Permission create(Permission dto);
 
     void deletePermission(String permissionCode);
+
+    Permission getByCode(String code);
+
+    boolean existsByCode(String code);
+
+    List<Permission> getAll();
 }

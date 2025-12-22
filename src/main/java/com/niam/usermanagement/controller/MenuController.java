@@ -2,7 +2,9 @@ package com.niam.usermanagement.controller;
 
 import com.niam.common.model.response.ServiceResponse;
 import com.niam.common.utils.ResponseEntityUtil;
+import com.niam.usermanagement.annotation.HasPermission;
 import com.niam.usermanagement.model.entities.Menu;
+import com.niam.usermanagement.model.enums.PRIVILEGE;
 import com.niam.usermanagement.service.MenuService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -36,19 +38,19 @@ public class MenuController {
         return responseEntityUtil.ok(menuService.getMenuById(id));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/batch")
+    @HasPermission(PRIVILEGE.MENU_MANAGE)
+    @PostMapping
     public ResponseEntity<ServiceResponse> createMenus(@RequestBody List<Menu> menus) {
         return responseEntityUtil.ok(menuService.createMenus(menus));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/batch")
+    @HasPermission(PRIVILEGE.MENU_MANAGE)
+    @PutMapping
     public ResponseEntity<ServiceResponse> updateMenus(@RequestBody List<Menu> menus) {
         return responseEntityUtil.ok(menuService.updateMenus(menus));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @HasPermission(PRIVILEGE.MENU_MANAGE)
     @DeleteMapping("/{id}")
     public ResponseEntity<ServiceResponse> deleteMenu(@PathVariable Long id) {
         menuService.deleteMenu(id);

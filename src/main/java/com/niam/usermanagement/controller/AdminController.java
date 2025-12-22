@@ -36,13 +36,13 @@ public class AdminController {
     @PutMapping("/users/{username}")
     @HasPermission(PRIVILEGE.USER_MANAGE)
     public ResponseEntity<ServiceResponse> updateUser(@PathVariable String username, @RequestBody UserDTO request) {
-        return responseEntityUtil.ok(userService.updateUser(username, request));
+        return responseEntityUtil.ok(userService.updateUserDTO(username, request));
     }
 
     @DeleteMapping("/users/{username}")
     @HasPermission(PRIVILEGE.USER_MANAGE)
     public ResponseEntity<ServiceResponse> deleteUser(@PathVariable String username) {
-        userService.deleteUser(username);
+        userService.deactivateUser(username);
         return responseEntityUtil.ok("User deleted successfully");
     }
 
@@ -55,7 +55,7 @@ public class AdminController {
     @GetMapping("/users/{username}")
     @HasPermission({PRIVILEGE.USER_MANAGE, PRIVILEGE.USER_READ})
     public ResponseEntity<ServiceResponse> getUser(@PathVariable String username) {
-        return responseEntityUtil.ok(userService.loadUserByUsername(username));
+        return responseEntityUtil.ok(userService.getUserByUsername(username));
     }
 
     @GetMapping("/users")

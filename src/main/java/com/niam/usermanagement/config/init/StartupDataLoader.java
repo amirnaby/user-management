@@ -33,13 +33,13 @@ public class StartupDataLoader implements ApplicationRunner {
         // ---------------------------------------------------------
         // 1) Seed permissions from PRIVILEGE enum
         // ---------------------------------------------------------
-        for (PRIVILEGE privilege : PRIVILEGE.values()) {
-            permissionRepository.findByCode(privilege.getCode())
+        for (String privilege : PRIVILEGE.values()) {
+            permissionRepository.findByCode(privilege)
                     .orElseGet(() -> permissionRepository.save(
                             Permission.builder()
-                                    .code(privilege.getCode())
-                                    .name(privilege.getCode())
-                                    .description(privilege.getCode())
+                                    .code(privilege)
+                                    .name(privilege)
+                                    .description(privilege)
                                     .build()
                     ));
         }
@@ -48,11 +48,11 @@ public class StartupDataLoader implements ApplicationRunner {
         // 2) Seed roles from ROLE enum
         // ---------------------------------------------------------
         for (ROLE roleEnum : ROLE.values()) {
-            String roleName = "ROLE_" + roleEnum.name(); // ROLE_ADMIN, ROLE_USER ...
+            String roleName = "ROLE_" + roleEnum.name();
             if (!roleRepository.existsByName(roleName)) {
                 Set<Permission> permissions = roleEnum.getPRIVILEGES()
                         .stream()
-                        .map(pr -> permissionRepository.findByCode(pr.getCode())
+                        .map(pr -> permissionRepository.findByCode(pr)
                                 .orElseThrow(() -> new IllegalStateException("Permission not found: " + pr)))
                         .collect(Collectors.toSet());
 
