@@ -55,6 +55,7 @@ public class AuthenticationController {
     @PostMapping("/register")
     public ResponseEntity<ServiceResponse> register(
             @Validated({Default.class, StrongPassword.class}) @RequestBody UserDTO request) {
+        if (!configFile.isSelfRegistrationEnabled()) throw new NotFoundException("Registration is disabled");
         AuthenticationResponse resp = authenticationService.register(request);
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.SET_COOKIE, jwtService.generateJwtCookie(resp.getAccessToken()).toString());

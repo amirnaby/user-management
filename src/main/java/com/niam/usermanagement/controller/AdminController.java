@@ -1,9 +1,11 @@
 package com.niam.usermanagement.controller;
 
+import com.niam.common.exception.NotFoundException;
 import com.niam.common.model.response.ServiceResponse;
 import com.niam.common.utils.ResponseEntityUtil;
 import com.niam.usermanagement.annotation.HasPermission;
 import com.niam.usermanagement.annotation.StrongPassword;
+import com.niam.usermanagement.config.UMConfigFile;
 import com.niam.usermanagement.model.enums.PRIVILEGE;
 import com.niam.usermanagement.model.payload.request.UserDTO;
 import com.niam.usermanagement.service.UserService;
@@ -24,12 +26,14 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AdminController {
     private final UserService userService;
+    private final UMConfigFile configFile;
     private final PaginationUtils paginationUtils;
     private final ResponseEntityUtil responseEntityUtil;
 
     @PostMapping("/users")
     @HasPermission(PRIVILEGE.USER_MANAGE)
     public ResponseEntity<ServiceResponse> createUserByAdmin(@Validated({Default.class, StrongPassword.class}) @RequestBody UserDTO request) {
+        if (!configFile.isUserCreationEnabled()) throw new NotFoundException("User creation is disabled");
         return responseEntityUtil.ok(userService.createUser(request));
     }
 

@@ -9,6 +9,10 @@ import org.springframework.context.annotation.Configuration;
 public class UMConfigFile {
     @Value("${spring.profiles.active:sec}")
     private String activeProfile;
+    @Value("${app.self-registration.enabled:false}")
+    private boolean selfRegistrationEnabled;
+    @Value("${app.user-creation.enabled:false}")
+    private boolean userCreationEnabled;
 
     @Value("${app.captcha.enabled:false}")
     private boolean captchaEnabled;
@@ -24,9 +28,9 @@ public class UMConfigFile {
     private int captchaTtlSeconds;
 
     @Value("${app.otp.enabled:false}")
-    private boolean isOtpEnabled;
+    private boolean otpEnabled;
     @Value("${app.passwordless.enabled:false}")
-    private boolean isPasswordlessEnabled;
+    private boolean passwordlessEnabled;
     @Value("${app.otp.provider:DEV}")
     private String otpProviderName;
     @Value("${app.otp.length:6}")
